@@ -48,31 +48,20 @@ export default function ScannerExport({ pages, settings }: Props) {
 
         if (i > 0) pdf.addPage();
 
-        if (page.file.type === "application/pdf") {
-          // For PDFs just add a placeholder note — full PDF merge needs pdf-lib
-          pdf.setFontSize(14);
-          pdf.text(`ملف PDF: ${page.name}`, a4W / 2, a4H / 2, { align: "center" });
-        } else {
-          // Image pages
-          await new Promise<void>((resolve) => {
-            const img = new Image();
-            img.onload = () => {
-              const canvas = applyFilters(img);
-              const imgData = canvas.toDataURL("image/jpeg", 0.92);
-
-              // Fit image to A4 maintaining aspect ratio
-              const ratio = Math.min(a4W / img.naturalWidth, a4H / img.naturalHeight);
-              const w = img.naturalWidth * ratio;
-              const h = img.naturalHeight * ratio;
-              const x = (a4W - w) / 2;
-              const y = (a4H - h) / 2;
-
-              pdf.addImage(imgData, "JPEG", x, y, w, h);
-              resolve();
-            };
-            img.src = page.previewUrl;
-          });
-        }
+        // All pages now have a rendered image URL (PDFs are pre-rendered to canvas)
+        await new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = applyFilters(img);
+            const imgData = canvas.toDataURL("image/jpeg", 0.92);
+            const ratio = Math.min(a4W / img.naturalWidth, a4H / img.naturalHeight);
+            const w = img.naturalWidth * ratio;
+            const h = img.naturalHeight * ratio;
+            pdf.addImage(imgData, "JPEG", (a4W - w) / 2, (a4H - h) / 2, w, h);
+            resolve();
+          };
+          img.src = page.previewUrl; // always a renderable image URL
+        });
 
         setProgress(Math.round(((i + 1) / pages.length) * 100));
       }
