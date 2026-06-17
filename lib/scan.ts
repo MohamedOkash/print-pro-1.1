@@ -80,21 +80,28 @@ export function enhanceToCanvas(
       gray[p] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
     }
     // Wider window → background dominated by paper, so text is never eaten.
-    const radius = Math.max(12, Math.round(Math.max(w, h) / 14));
+    // Wider blur window → background estimate dominated by paper, not text.
+    const radius = Math.max(14, Math.round(Math.max(w, h) / 12));
     const bg = boxBlur(gray, w, h, radius);
     const briF = s.brightness / 100;
     const con = Math.max(0.5, s.contrast / 100);
-    // White point: ratios at/above this become paper-white.
-    // Black point: ratios at/below this become solid ink. Higher contrast
-    // slider lowers the black point so ink reads darker, but text stays present.
-    const whitePt = 0.93;
-    const blackPt = Math.max(0.18, Math.min(0.72, 0.46 / con));
-    const span = whitePt - blackPt;
+
+    // White point  : pixels at ≥ this fraction of local background → pure white
+    //               (0.88 is safer than 0.93 — leaves a wider zone for faint marks)
+    // Black point  : pixels at ≤ this fraction → solid ink
+    //               Decreasing with higher contrast deepens the ink without losing text.
+    const whitePt = 0.88;
+    const blackPt = Math.max(0.14, Math.min(0.65, 0.40 / con));
+    const span    = whitePt - blackPt;
+
     for (let i = 0, p = 0; p < n; i += 4, p++) {
-      const base = bg[p] > 1 ? bg[p] : 1;
+      const base  = bg[p] > 1 ? bg[p] : 1;
       const ratio = gray[p] / base;
-      let t = (ratio - blackPt) / span;       // adaptive levels stretch
+      let t = (ratio - blackPt) / span;   // linear levels stretch
       t = t < 0 ? 0 : t > 1 ? 1 : t;
+      // Gamma < 1 darkens midtones: thin pencil lines / faint stamps stay visible
+      // while paper (t≈1) stays pure white.
+      t = Math.pow(t, 0.82);
       const v = clamp(t * 255 * briF);
       d[i] = d[i + 1] = d[i + 2] = v;
     }
