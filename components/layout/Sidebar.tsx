@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { clearSession } from "@/lib/auth";
+import { logout } from "@/lib/firebase";
 import { LogoIcon } from "@/components/Logo";
 import {
   ScanLine,
@@ -31,8 +31,8 @@ export default function Sidebar({ open = false, onClose }: { open?: boolean; onC
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLogout = () => {
-    clearSession();
+  const handleLogout = async () => {
+    await logout();
     router.replace("/login");
   };
 

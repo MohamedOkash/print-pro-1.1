@@ -2,20 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import { Printer } from "lucide-react";
 
-/** Wraps protected pages — redirects to /login when there is no session. */
+/** Wraps protected pages — redirects to /login when there is no Firebase user. */
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (getSession()) {
-      setReady(true);
-    } else {
-      router.replace("/login");
-    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setReady(true);
+      } else {
+        router.replace("/login");
+      }
+    });
+    return () => unsubscribe();
   }, [router]);
 
   if (!ready) {

@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import StatsPanel from "@/components/dashboard/StatsPanel";
 import { LogoIcon } from "@/components/Logo";
-import { getSession } from "@/lib/auth";
 
 const modules = [
   {
@@ -75,7 +74,12 @@ const perks = [
 
 export default function DashboardPage() {
   const [name, setName] = useState<string>("");
-  useEffect(() => { setName(getSession()?.name ?? ""); }, []);
+  useEffect(() => {
+    import("@/lib/firebase").then(({ auth }) => {
+      const user = auth.currentUser;
+      setName(user?.displayName ?? user?.email ?? "");
+    });
+  }, []);
 
   return (
     <div className="space-y-10 pb-8">
