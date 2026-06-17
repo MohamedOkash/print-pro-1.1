@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
-  ScanLine, RefreshCw, FileEdit, Palette, Sparkles,
+  ScanLine, RefreshCw, FileEdit, Palette, Sparkles, FolderOpen,
   ArrowLeft, Zap, Shield, Star,
 } from "lucide-react";
 import StatsPanel from "@/components/dashboard/StatsPanel";
+import { LogoIcon } from "@/components/Logo";
+import { getSession } from "@/lib/auth";
 
 const modules = [
   {
@@ -53,6 +56,15 @@ const modules = [
     glow: "16,185,129",
     badge: "AI",
   },
+  {
+    href: "/dashboard/files",
+    label: "ملفاتي",
+    desc: "كل ملفاتك المحفوظة في مكان واحد مع الرفع والتحميل",
+    icon: FolderOpen,
+    gradient: "from-slate-400 via-slate-500 to-slate-600",
+    glow: "100,116,139",
+    badge: null,
+  },
 ];
 
 const perks = [
@@ -62,11 +74,14 @@ const perks = [
 ];
 
 export default function DashboardPage() {
+  const [name, setName] = useState<string>("");
+  useEffect(() => { setName(getSession()?.name ?? ""); }, []);
+
   return (
     <div className="space-y-10 pb-8">
 
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl"
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl animate-fade-in"
         style={{
           background: "linear-gradient(135deg, rgba(245,158,11,0.14) 0%, rgba(59,130,246,0.10) 50%, rgba(139,92,246,0.08) 100%)",
           border: "1px solid rgba(245,158,11,0.18)",
@@ -86,7 +101,7 @@ export default function DashboardPage() {
               منصة الطباعة الذكية
             </div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-900 leading-tight mb-3">
-              <span className="text-slate-100">مرحباً في </span>
+              <span className="text-slate-100">{name ? `أهلاً ${name}، ` : "مرحباً في "}</span>
               <span className="text-gold-gradient">Print Pro</span>
             </h1>
             <p className="text-slate-400 text-sm sm:text-base leading-relaxed max-w-md">
@@ -108,13 +123,13 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="hidden sm:block flex-shrink-0">
-            <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl flex items-center justify-center text-5xl md:text-6xl animate-float"
+            <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl flex items-center justify-center animate-float"
               style={{
-                background: "linear-gradient(135deg, rgba(245,158,11,0.15), rgba(59,130,246,0.1))",
-                border: "1px solid rgba(245,158,11,0.2)",
-                boxShadow: "0 20px 60px rgba(245,158,11,0.1)",
+                background: "linear-gradient(135deg, rgba(84,104,255,0.18), rgba(139,92,246,0.12))",
+                border: "1px solid rgba(109,92,240,0.28)",
+                boxShadow: "0 20px 60px rgba(109,92,240,0.22)",
               }}>
-              🖨️
+              <LogoIcon size={84} className="drop-shadow-[0_0_18px_rgba(109,92,240,0.45)]" />
             </div>
           </div>
         </div>
@@ -130,10 +145,11 @@ export default function DashboardPage() {
           <span className="text-xs text-slate-600">{modules.length} أدوات متاحة</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {modules.map(({ href, label, desc, icon: Icon, gradient, glow, badge }) => (
-            <Link key={href} href={href} className="group block">
+          {modules.map(({ href, label, desc, icon: Icon, gradient, glow, badge }, i) => (
+            <Link key={href} href={href} className="group block animate-slide-up"
+              style={{ animationDelay: `${i * 70}ms`, animationFillMode: "backwards" }}>
               <div className="relative overflow-hidden rounded-2xl p-6 transition-all duration-300
-                  hover:-translate-y-1.5 hover:shadow-2xl cursor-pointer"
+                  hover:-translate-y-1.5 hover:shadow-2xl cursor-pointer h-full"
                 style={{
                   background: "rgba(255,255,255,0.04)",
                   border: "1px solid rgba(255,255,255,0.08)",
@@ -190,9 +206,9 @@ export default function DashboardPage() {
           { emoji: "📸", title: "ماسح ذكي", tip: "ارفع أكثر من صورة دفعة واحدة لدمجها في PDF واحد" },
           { emoji: "🤖", title: "ذكاء اصطناعي", tip: "اكتب موضوعك واترك Gemini يكتب التقرير كاملاً" },
           { emoji: "🎨", title: "قوالب مدرسية", tip: "اختر قالباً جاهزاً وعدّل عليه في ثوانٍ للطباعة" },
-        ].map(({ emoji, title, tip }) => (
-          <div key={title} className="rounded-2xl p-5 flex gap-4"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        ].map(({ emoji, title, tip }, i) => (
+          <div key={title} className="rounded-2xl p-5 flex gap-4 transition-all hover:-translate-y-0.5 animate-slide-up"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", animationDelay: `${i * 80}ms`, animationFillMode: "backwards" }}>
             <div className="text-3xl flex-shrink-0">{emoji}</div>
             <div>
               <p className="text-sm font-700 text-slate-200 mb-1">{title}</p>

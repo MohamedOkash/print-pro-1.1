@@ -5,7 +5,8 @@ import { Download, Save, FileDown, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { ScannedPage } from "./ImageUploadZone";
-import { buildFilter, type EnhanceSettings } from "./ImageEnhancer";
+import { type EnhanceSettings } from "./ImageEnhancer";
+import { enhanceToCanvas } from "@/lib/scan";
 import { addFile, bumpUsage } from "@/lib/store";
 
 interface Props {
@@ -19,18 +20,17 @@ export default function ScannerExport({ pages, settings }: Props) {
   const [done, setDone] = useState(false);
   const [filename, setFilename] = useState("مستند-ممسوح");
 
-  const applyFilters = (img: HTMLImageElement): HTMLCanvasElement => {
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext("2d")!;
-
-    // Same filter string as the live preview — WYSIWYG export
-    ctx.filter = buildFilter(settings);
-
-    ctx.drawImage(img, 0, 0);
-    return canvas;
-  };
+  // Crisp, pixel-level enhancement (shadow removal + contrast) — far cleaner
+  // than the CSS-filter approximation used in the live preview.
+  const applyFilters = (img: HTMLImageElement): HTMLCanvasElement =>
+    enhanceToCanvas(img, {
+      grayscale: settings.grayscale,
+      contrast: settings.contrast,
+      brightness: settings.brightness,
+      sepia: settings.sepia,
+      invert: settings.invert,
+      smartWhiten: settings.smartWhiten,
+    });
 
   const exportToPDF = async () => {
     if (pages.length === 0) return;
@@ -54,7 +54,7 @@ export default function ScannerExport({ pages, settings }: Props) {
           const img = new Image();
           img.onload = () => {
             const canvas = applyFilters(img);
-            const imgData = canvas.toDataURL("image/jpeg", 0.92);
+            const imgData = canvas.toDataURL("image/jpeg", 0.96);
             const ratio = Math.min(a4W / img.naturalWidth, a4H / img.naturalHeight);
             const w = img.naturalWidth * ratio;
             const h = img.naturalHeight * ratio;

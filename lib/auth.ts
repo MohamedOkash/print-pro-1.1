@@ -12,20 +12,23 @@ export interface Account {
   role: "admin" | "user";
 }
 
+/** Shared password for all 10 hand-out user accounts. */
+export const USER_PASSWORD = "PrintPro@2025";
+
 /** The ONLY accounts allowed to sign in. */
 export const ACCOUNTS: Account[] = [
   { email: "okash@printpro.com", password: "Admin@1234", name: "okash", role: "admin" },
-  // 10 ready-to-hand-out accounts
-  { email: "user1@printpro.com",  password: "Print@1001", name: "مستخدم 1",  role: "user" },
-  { email: "user2@printpro.com",  password: "Print@1002", name: "مستخدم 2",  role: "user" },
-  { email: "user3@printpro.com",  password: "Print@1003", name: "مستخدم 3",  role: "user" },
-  { email: "user4@printpro.com",  password: "Print@1004", name: "مستخدم 4",  role: "user" },
-  { email: "user5@printpro.com",  password: "Print@1005", name: "مستخدم 5",  role: "user" },
-  { email: "user6@printpro.com",  password: "Print@1006", name: "مستخدم 6",  role: "user" },
-  { email: "user7@printpro.com",  password: "Print@1007", name: "مستخدم 7",  role: "user" },
-  { email: "user8@printpro.com",  password: "Print@1008", name: "مستخدم 8",  role: "user" },
-  { email: "user9@printpro.com",  password: "Print@1009", name: "مستخدم 9",  role: "user" },
-  { email: "user10@printpro.com", password: "Print@1010", name: "مستخدم 10", role: "user" },
+  // 10 ready-to-hand-out accounts — all share one unified password.
+  { email: "user1@printpro.com",  password: USER_PASSWORD, name: "مستخدم 1",  role: "user" },
+  { email: "user2@printpro.com",  password: USER_PASSWORD, name: "مستخدم 2",  role: "user" },
+  { email: "user3@printpro.com",  password: USER_PASSWORD, name: "مستخدم 3",  role: "user" },
+  { email: "user4@printpro.com",  password: USER_PASSWORD, name: "مستخدم 4",  role: "user" },
+  { email: "user5@printpro.com",  password: USER_PASSWORD, name: "مستخدم 5",  role: "user" },
+  { email: "user6@printpro.com",  password: USER_PASSWORD, name: "مستخدم 6",  role: "user" },
+  { email: "user7@printpro.com",  password: USER_PASSWORD, name: "مستخدم 7",  role: "user" },
+  { email: "user8@printpro.com",  password: USER_PASSWORD, name: "مستخدم 8",  role: "user" },
+  { email: "user9@printpro.com",  password: USER_PASSWORD, name: "مستخدم 9",  role: "user" },
+  { email: "user10@printpro.com", password: USER_PASSWORD, name: "مستخدم 10", role: "user" },
 ];
 
 export interface Session {

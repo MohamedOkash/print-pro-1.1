@@ -49,6 +49,8 @@ export default function FilesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [preview, setPreview] = useState<StoredFile | null>(null);
 
   const filtered = files.filter((f) => {
@@ -57,16 +59,20 @@ export default function FilesPage() {
     return matchesSearch && matchesType;
   });
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const uploadedFiles = Array.from(e.target.files || []);
-    if (!uploadedFiles.length) return;
+  const processFiles = async (list: File[]) => {
+    if (!list.length) return;
     setUploading(true);
+    setNotice(null);
+    let metaOnly = 0;
     try {
-      for (const f of uploadedFiles) {
-        // keep a downloadable copy for small files; large files store metadata only
+      for (const f of list) {
+        // Keep a downloadable copy for files small enough to fit the browser's
+        // localStorage; bigger files are still saved as metadata-only entries.
         let dataUrl: string | undefined;
-        if (f.size < 4_000_000) {
+        if (f.size < 2_800_000) {
           try { dataUrl = await fileToDataUrl(f); } catch { /* ignore */ }
+        } else {
+          metaOnly++;
         }
         addFile({
           name: f.name,
@@ -76,10 +82,23 @@ export default function FilesPage() {
           source: "upload",
         });
       }
+      if (metaOnly > 0) {
+        setNotice(`تم رفع ${list.length} ملف. ${metaOnly} ملف كبير الحجم حُفظ بدون نسخة للتحميل.`);
+      }
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    await processFiles(Array.from(e.target.files || []));
+    e.target.value = "";
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    await processFiles(Array.from(e.dataTransfer.files || []));
   };
 
   const download = (file: StoredFile) => {
@@ -100,7 +119,32 @@ export default function FilesPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6 relative"
+      onDragOver={(e) => { e.preventDefault(); if (!dragOver) setDragOver(true); }}
+      onDragLeave={(e) => { if (e.currentTarget === e.target) setDragOver(false); }}
+      onDrop={handleDrop}
+    >
+      {/* Drag-and-drop overlay */}
+      {dragOver && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none"
+          style={{ background: "rgba(2,6,16,0.7)", backdropFilter: "blur(4px)" }}>
+          <div className="rounded-3xl px-12 py-10 text-center"
+            style={{ border: "2px dashed rgba(245,158,11,0.6)", background: "rgba(245,158,11,0.08)" }}>
+            <Upload className="w-12 h-12 mx-auto mb-3 text-gold-400" />
+            <p className="text-lg font-700 text-slate-100">أفلت الملفات هنا لرفعها</p>
+          </div>
+        </div>
+      )}
+
+      {notice && (
+        <div className="rounded-xl px-4 py-3 text-sm flex items-center justify-between gap-3"
+          style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", color: "#F59E0B" }}>
+          <span>{notice}</span>
+          <button onClick={() => setNotice(null)} className="text-gold-400/70 hover:text-gold-400"><X className="w-4 h-4" /></button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-start gap-4">
@@ -197,11 +241,16 @@ export default function FilesPage() {
 
       {/* Files */}
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-slate-600">
-          <FolderOpen className="w-14 h-14 mx-auto mb-4 opacity-20" />
-          <p className="text-base font-600 mb-1">لا توجد ملفات</p>
-          <p className="text-sm">ارفع ملفاتك أو أنشئها من الأدوات الأخرى</p>
-        </div>
+        <label className="block cursor-pointer">
+          <input type="file" multiple className="hidden" onChange={handleUpload}
+            accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.pptx,.xlsx,.csv" />
+          <div className="text-center py-16 rounded-3xl transition-all hover:bg-white/[0.02]"
+            style={{ border: "2px dashed rgba(255,255,255,0.12)" }}>
+            <Upload className="w-14 h-14 mx-auto mb-4 text-gold-400/60" />
+            <p className="text-base font-600 mb-1 text-slate-300">اسحب ملفاتك هنا أو اضغط للرفع</p>
+            <p className="text-sm text-slate-600">PDF · صور · Word · PowerPoint · Excel</p>
+          </div>
+        </label>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {filtered.map((file) => {

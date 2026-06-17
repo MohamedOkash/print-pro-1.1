@@ -31,11 +31,12 @@ const defaultSettings: EnhanceSettings = {
  */
 function buildFilter(s: EnhanceSettings): string {
   if (s.smartWhiten) {
-    // Adaptive document whitening: push blacks blacker, whites whiter
-    const bri = Math.min(s.brightness + 18, 180);
+    // Live-preview approximation of the pixel-level whitening done on export.
+    // Kept moderate so the preview stays legible (export uses lib/scan).
+    const bri = Math.min(s.brightness + 18, 160);
     return [
       `brightness(${bri}%)`,
-      `contrast(380%)`,
+      `contrast(155%)`,
       `grayscale(100%)`,
       s.invert ? "invert(100%)" : "",
     ].filter(Boolean).join(" ");

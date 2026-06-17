@@ -265,6 +265,259 @@ function schoolEvent(f: any, cv: any) {
   cv.renderAll();
 }
 
+function priceList(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#0F1923";
+  cv.add(
+    new f.Rect({left:0,top:0,width:420,height:96,fill:"#F59E0B",selectable:false,evented:false}),
+    itext(f,"قائمة الأسعار",{left:210,top:38,fontSize:30,fontFamily:"Cairo,sans-serif",fill:"#0F1923",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"اسم المؤسسة / المتجر",{left:210,top:72,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"rgba(15,25,35,0.7)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  for(let i=0;i<6;i++){ const y=140+i*64;
+    cv.add(
+      new f.Rect({left:24,top:y,width:372,height:48,fill:"rgba(255,255,255,0.05)",rx:10,ry:10,selectable:false,evented:false}),
+      itext(f,"اسم الصنف",{left:372,top:y+24,fontSize:16,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",fontWeight:"bold",textAlign:"right",originX:"right",originY:"center"}),
+      itext(f,"٠٠ ج.م",{left:48,top:y+24,fontSize:16,fontFamily:"Cairo,sans-serif",fill:"#F59E0B",fontWeight:"bold",originY:"center"}),
+    );
+  }
+  cv.renderAll();
+}
+
+function flyerCover(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#150A2E";
+  cv.add(
+    new f.Circle({left:250,top:-80,radius:180,fill:"rgba(236,72,153,0.25)",selectable:false,evented:false}),
+    new f.Circle({left:-120,top:380,radius:200,fill:"rgba(99,102,241,0.22)",selectable:false,evented:false}),
+    itext(f,"عرض خاص",{left:210,top:170,fontSize:18,fontFamily:"Cairo,sans-serif",fill:"#EC4899",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"خصم ٥٠٪",{left:210,top:250,fontSize:64,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"على جميع الخدمات",{left:210,top:320,fontSize:20,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.75)",textAlign:"center",originX:"center",originY:"center"}),
+    new f.Rect({left:120,top:380,width:180,height:48,fill:"#EC4899",rx:24,ry:24,selectable:false,evented:false}),
+    itext(f,"اطلب الآن",{left:210,top:404,fontSize:18,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"☎ ٠١٠٠٠٠٠٠٠٠٠",{left:210,top:520,fontSize:16,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.6)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
+function restaurantMenu(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#1B120A";
+  cv.add(
+    new f.Rect({left:24,top:24,width:372,height:546,fill:"transparent",stroke:"#C9A24B",strokeWidth:2,selectable:false,evented:false}),
+    itext(f,"🍽️",{left:210,top:90,fontSize:48,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"قائمة الطعام",{left:210,top:160,fontSize:36,fontFamily:"Cairo,sans-serif",fill:"#C9A24B",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    new f.Rect({left:150,top:200,width:120,height:2,fill:"#C9A24B",selectable:false,evented:false}),
+    itext(f,"اسم المطعم",{left:210,top:235,fontSize:18,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.7)",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"مأكولات شرقية وغربية",{left:210,top:280,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"rgba(201,162,75,0.6)",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"العنوان • رقم الهاتف",{left:210,top:520,fontSize:13,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.35)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
+function cvCover(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#0A1628";
+  cv.add(
+    new f.Rect({left:0,top:0,width:150,height:594,fill:"#13243B",selectable:false,evented:false}),
+    new f.Circle({left:35,top:60,radius:40,fill:"rgba(245,158,11,0.18)",stroke:"#F59E0B",strokeWidth:2,selectable:false,evented:false}),
+    itext(f,"👤",{left:75,top:100,fontSize:34,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"الاسم الكامل",{left:390,top:200,fontSize:34,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",fontWeight:"bold",textAlign:"right",originX:"right",originY:"center"}),
+    itext(f,"المسمى الوظيفي",{left:390,top:248,fontSize:18,fontFamily:"Cairo,sans-serif",fill:"#F59E0B",textAlign:"right",originX:"right",originY:"center"}),
+    new f.Rect({left:230,top:280,width:160,height:2,fill:"rgba(255,255,255,0.2)",selectable:false,evented:false}),
+    itext(f,"السيرة الذاتية",{left:390,top:330,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.45)",textAlign:"right",originX:"right",originY:"center"}),
+    itext(f,"📧 البريد الإلكتروني",{left:390,top:430,fontSize:13,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.6)",textAlign:"right",originX:"right",originY:"center"}),
+    itext(f,"📱 رقم الهاتف",{left:390,top:464,fontSize:13,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.6)",textAlign:"right",originX:"right",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
+function weddingInvite(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#160D18";
+  cv.add(
+    new f.Rect({left:14,top:14,width:392,height:566,fill:"transparent",stroke:"#D4AF37",strokeWidth:1.5,selectable:false,evented:false}),
+    new f.Rect({left:22,top:22,width:376,height:550,fill:"transparent",stroke:"rgba(212,175,55,0.3)",strokeWidth:0.75,selectable:false,evented:false}),
+    itext(f,"🌿",{left:54,top:54,fontSize:24,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"🌿",{left:366,top:54,fontSize:24,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"💍",{left:210,top:108,fontSize:44,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"دعوة زفاف",{left:210,top:180,fontSize:22,fontFamily:"El Messiri,serif",fill:"rgba(255,255,255,0.65)",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"فلان  &  فلانة",{left:210,top:252,fontSize:40,fontFamily:"Aref Ruqaa,serif",fill:"#D4AF37",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    new f.Rect({left:140,top:300,width:140,height:1,fill:"#D4AF37",selectable:false,evented:false}),
+    itext(f,"يتشرفان بدعوتكم لحضور حفل زفافهما",{left:210,top:346,fontSize:14,fontFamily:"El Messiri,serif",fill:"rgba(255,255,255,0.7)",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"📅  التاريخ: ........................",{left:210,top:420,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"🕒  الوقت: ........................",{left:210,top:458,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"📍  المكان: ........................",{left:210,top:496,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
+function thankYouCard(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#0A2A1E";
+  cv.add(
+    new f.Circle({left:-70,top:-70,radius:150,fill:"rgba(16,185,129,0.10)",selectable:false,evented:false}),
+    new f.Circle({left:340,top:460,radius:170,fill:"rgba(16,185,129,0.10)",selectable:false,evented:false}),
+    new f.Rect({left:18,top:18,width:384,height:558,fill:"transparent",stroke:"rgba(16,185,129,0.35)",strokeWidth:1.5,rx:16,ry:16,selectable:false,evented:false}),
+    itext(f,"🌿",{left:210,top:130,fontSize:46,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"شكراً لكم",{left:210,top:285,fontSize:52,fontFamily:"Aref Ruqaa,serif",fill:"#34D399",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    new f.Rect({left:150,top:332,width:120,height:2,fill:"#34D399",selectable:false,evented:false}),
+    itext(f,"نقدّر ثقتكم الغالية وتعاملكم معنا",{left:210,top:378,fontSize:16,fontFamily:"El Messiri,serif",fill:"rgba(255,255,255,0.75)",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"اسم المؤسسة",{left:210,top:500,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.4)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
+function islamicCover(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#06231C";
+  cv.add(
+    new f.Rect({left:0,top:0,width:420,height:14,fill:"#C9A24B",selectable:false,evented:false}),
+    new f.Rect({left:0,top:580,width:420,height:14,fill:"#C9A24B",selectable:false,evented:false}),
+    itext(f,"۞",{left:210,top:120,fontSize:64,fontFamily:"Amiri,serif",fill:"#C9A24B",originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"بسم الله الرحمن الرحيم",{left:210,top:230,fontSize:24,fontFamily:"Amiri,serif",fill:"#FFFFFF",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"عنوان الكتاب / الرسالة",{left:210,top:310,fontSize:30,fontFamily:"Amiri,serif",fill:"#C9A24B",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    new f.Rect({left:120,top:355,width:180,height:1,fill:"rgba(201,162,75,0.5)",selectable:false,evented:false}),
+    itext(f,"اسم المؤلف",{left:210,top:400,fontSize:18,fontFamily:"Amiri,serif",fill:"rgba(255,255,255,0.7)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
+function posterEvent(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#0A0A0F";
+  cv.add(
+    new f.Rect({left:0,top:0,width:420,height:300,fill:"rgba(245,158,11,0.14)",selectable:false,evented:false}),
+    new f.Circle({left:250,top:-110,radius:170,fill:"rgba(236,72,153,0.18)",selectable:false,evented:false}),
+    new f.Polygon([{x:0,y:0},{x:120,y:0},{x:60,y:46}],{left:40,top:44,fill:"#F59E0B",opacity:0.9,selectable:false,evented:false}),
+    itext(f,"حدث",{left:100,top:60,fontSize:20,fontFamily:"Changa,sans-serif",fill:"#0A0A0F",fontWeight:"bold",originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"عنوان الفعالية الكبير",{left:40,top:150,fontSize:44,fontFamily:"Changa,sans-serif",fill:"#FFFFFF",fontWeight:"bold"}),
+    itext(f,"وصف مختصر للفعالية يوضح أهم التفاصيل",{left:40,top:235,fontSize:15,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.6)"}),
+    new f.Rect({left:0,top:300,width:420,height:5,fill:"#F59E0B",selectable:false,evented:false}),
+    itext(f,"📅  التاريخ",{left:40,top:370,fontSize:18,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF"}),
+    itext(f,"🕒  الوقت",{left:40,top:415,fontSize:18,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF"}),
+    itext(f,"📍  المكان",{left:40,top:460,fontSize:18,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF"}),
+    new f.Rect({left:40,top:515,width:200,height:46,fill:"#F59E0B",rx:23,ry:23,selectable:false,evented:false}),
+    itext(f,"احجز مكانك الآن",{left:140,top:538,fontSize:16,fontFamily:"Cairo,sans-serif",fill:"#0A0A0F",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
+/* ─────────── new school templates ─────────── */
+function arabicCover(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#1B0E2B";
+  cv.add(
+    new f.Rect({left:14,top:14,width:392,height:566,fill:"transparent",stroke:"#E0B252",strokeWidth:2,rx:6,ry:6,selectable:false,evented:false}),
+    new f.Rect({left:22,top:22,width:376,height:550,fill:"transparent",stroke:"rgba(224,178,82,0.3)",strokeWidth:1,rx:4,ry:4,selectable:false,evented:false}),
+    new f.Circle({left:175,top:58,radius:35,fill:"rgba(224,178,82,0.12)",stroke:"#E0B252",strokeWidth:1.5,selectable:false,evented:false}),
+    itext(f,"ض",{left:210,top:95,fontSize:40,fontFamily:"Aref Ruqaa,serif",fill:"#E0B252",fontWeight:"bold",originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"اللغة العربية",{left:210,top:230,fontSize:46,fontFamily:"Aref Ruqaa,serif",fill:"#FFFFFF",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"لغة الضاد",{left:210,top:300,fontSize:22,fontFamily:"Amiri,serif",fill:"#E0B252",textAlign:"center",originX:"center",originY:"center"}),
+    new f.Rect({left:135,top:340,width:150,height:1.5,fill:"#E0B252",selectable:false,evented:false}),
+    itext(f,"اسم الطالب",{left:210,top:398,fontSize:18,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.8)",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"الصف الدراسي",{left:210,top:438,fontSize:15,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.5)",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"العام الدراسي ٢٠٢٤ / ٢٠٢٥",{left:210,top:520,fontSize:13,fontFamily:"Cairo,sans-serif",fill:"rgba(224,178,82,0.6)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
+function mathWorksheet(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#FFFFFF";
+  cv.add(
+    new f.Rect({left:0,top:0,width:420,height:80,fill:"#1565C0",selectable:false,evented:false}),
+    itext(f,"➗",{left:48,top:40,fontSize:30,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"ورقة عمل الرياضيات",{left:392,top:30,fontSize:22,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",fontWeight:"bold",textAlign:"right",originX:"right",originY:"center"}),
+    itext(f,"الاسم: ............  الصف: ......",{left:392,top:58,fontSize:12,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.85)",textAlign:"right",originX:"right",originY:"center"}),
+  );
+  for(let i=0;i<8;i++){
+    const col=i%2, row=Math.floor(i/2);
+    const x=24+col*198, y=110+row*112;
+    cv.add(
+      new f.Rect({left:x,top:y,width:174,height:96,fill:"#F4F8FF",stroke:"#1565C0",strokeWidth:1.5,rx:10,ry:10,selectable:false,evented:false}),
+      itext(f,`${i+1}`,{left:x+150,top:y+18,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"#1565C0",fontWeight:"bold",originX:"center",originY:"center",selectable:false,evented:false}),
+      itext(f,"٠٠ + ٠٠ =",{left:x+150,top:y+55,fontSize:18,fontFamily:"Cairo,sans-serif",fill:"#0D2A4A",fontWeight:"bold",textAlign:"right",originX:"right",originY:"center"}),
+    );
+  }
+  cv.renderAll();
+}
+
+function behaviorStars(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#0B2545";
+  cv.add(
+    new f.Rect({left:0,top:0,width:420,height:96,fill:"rgba(253,216,53,0.12)",selectable:false,evented:false}),
+    itext(f,"⭐",{left:40,top:48,fontSize:26,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"⭐",{left:380,top:48,fontSize:26,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"لوحة النجوم",{left:210,top:48,fontSize:30,fontFamily:"Changa,sans-serif",fill:"#FDD835",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  for(let i=0;i<5;i++){const y=130+i*82;
+    cv.add(
+      new f.Rect({left:24,top:y,width:372,height:66,fill:"rgba(255,255,255,0.06)",rx:12,ry:12,selectable:false,evented:false}),
+      itext(f,"اسم الطالب",{left:372,top:y+33,fontSize:16,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",fontWeight:"bold",textAlign:"right",originX:"right",originY:"center"}),
+      itext(f,"☆ ☆ ☆ ☆ ☆",{left:36,top:y+33,fontSize:22,fill:"#FDD835",originY:"center"}),
+    );
+  }
+  cv.renderAll();
+}
+
+function gradesReport(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#0F1E3D";
+  cv.add(
+    new f.Rect({left:0,top:0,width:420,height:14,fill:"#10B981",selectable:false,evented:false}),
+    itext(f,"📊",{left:210,top:58,fontSize:42,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"كشف الدرجات",{left:210,top:118,fontSize:30,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"اسم الطالب • الصف",{left:210,top:156,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.5)",textAlign:"center",originX:"center",originY:"center"}),
+    new f.Rect({left:24,top:192,width:372,height:40,fill:"#10B981",rx:8,ry:8,selectable:false,evented:false}),
+    itext(f,"المادة",{left:372,top:212,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"#06231C",fontWeight:"bold",textAlign:"right",originX:"right",originY:"center"}),
+    itext(f,"الدرجة",{left:50,top:212,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"#06231C",fontWeight:"bold",originY:"center"}),
+  );
+  ["اللغة العربية","الرياضيات","العلوم","اللغة الإنجليزية","الدراسات","التربية الدينية"].forEach((s:string,i:number)=>{const y=242+i*52;
+    cv.add(
+      new f.Rect({left:24,top:y,width:372,height:44,fill:"rgba(255,255,255,0.05)",rx:8,ry:8,selectable:false,evented:false}),
+      itext(f,s,{left:372,top:y+22,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",textAlign:"right",originX:"right",originY:"center"}),
+      itext(f,"٠٠ / ١٠٠",{left:48,top:y+22,fontSize:13,fontFamily:"Cairo,sans-serif",fill:"#34D399",fontWeight:"bold",originY:"center"}),
+    );
+  });
+  cv.renderAll();
+}
+
+/* ─────────── new event templates ─────────── */
+function graduationCard(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#0B1E3F";
+  cv.add(
+    new f.Rect({left:0,top:0,width:420,height:594,fill:"transparent",stroke:"rgba(255,215,0,0.15)",strokeWidth:14,selectable:false,evented:false}),
+    new f.Circle({left:130,top:70,radius:80,fill:"rgba(255,215,0,0.10)",selectable:false,evented:false}),
+    itext(f,"🎓",{left:210,top:148,fontSize:72,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"مبروك التخرج",{left:210,top:288,fontSize:42,fontFamily:"El Messiri,serif",fill:"#FFD700",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    new f.Rect({left:130,top:333,width:160,height:2,fill:"#FFD700",selectable:false,evented:false}),
+    itext(f,"اسم الخريج / الخريجة",{left:210,top:385,fontSize:24,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"دفعة ٢٠٢٥",{left:210,top:435,fontSize:16,fontFamily:"Cairo,sans-serif",fill:"rgba(255,215,0,0.7)",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"نتمنى لك مستقبلاً مشرقاً",{left:210,top:500,fontSize:14,fontFamily:"El Messiri,serif",fill:"rgba(255,255,255,0.5)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
+function eidGreeting(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#06231C";
+  cv.add(
+    new f.Rect({left:0,top:0,width:420,height:16,fill:"#C9A24B",selectable:false,evented:false}),
+    new f.Rect({left:0,top:578,width:420,height:16,fill:"#C9A24B",selectable:false,evented:false}),
+    itext(f,"🌙",{left:130,top:120,fontSize:50,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"⭐",{left:290,top:90,fontSize:28,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"عيد مبارك",{left:210,top:258,fontSize:52,fontFamily:"Aref Ruqaa,serif",fill:"#E8C766",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"كل عام وأنتم بخير",{left:210,top:330,fontSize:24,fontFamily:"Amiri,serif",fill:"#FFFFFF",textAlign:"center",originX:"center",originY:"center"}),
+    new f.Rect({left:140,top:372,width:140,height:1.5,fill:"#C9A24B",selectable:false,evented:false}),
+    itext(f,"تقبل الله منا ومنكم صالح الأعمال",{left:210,top:418,fontSize:15,fontFamily:"Amiri,serif",fill:"rgba(255,255,255,0.6)",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"اسم المُهدي",{left:210,top:520,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"rgba(232,199,102,0.6)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
+function birthdayCard(f:any,cv:any){
+  cv.clear(); cv.backgroundColor="#1A0E2E";
+  cv.add(
+    new f.Circle({left:-60,top:-60,radius:130,fill:"rgba(236,72,153,0.18)",selectable:false,evented:false}),
+    new f.Circle({left:340,top:450,radius:160,fill:"rgba(99,102,241,0.18)",selectable:false,evented:false}),
+    itext(f,"🎈",{left:70,top:90,fontSize:34,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"🎉",{left:350,top:110,fontSize:34,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"🎂",{left:210,top:160,fontSize:70,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"كل سنة وأنت طيب",{left:210,top:300,fontSize:38,fontFamily:"Changa,sans-serif",fill:"#FFFFFF",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"عيد ميلاد سعيد",{left:210,top:358,fontSize:22,fontFamily:"Changa,sans-serif",fill:"#EC4899",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"اسم المحتفى به",{left:210,top:435,fontSize:18,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.7)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
 /* ─────────── frame builders ─────────── */
 const W = 420, H = 594;
 
@@ -351,10 +604,25 @@ const TEMPLATES = [
   {id:"honor-board",  name:"لوحة الشرف",  cat:"مدرسي",emoji:"🏆",build:honorBoard},
   {id:"notebook",     name:"غلاف كراسة",  cat:"مدرسي",emoji:"📓",build:notebookCover},
   {id:"school-event", name:"دعوة فعالية", cat:"مدرسي",emoji:"🎉",build:schoolEvent},
+  {id:"arabic-cover", name:"غلاف لغة عربية",cat:"مدرسي",emoji:"📕",build:arabicCover},
+  {id:"math-sheet",   name:"ورقة رياضيات",cat:"مدرسي",emoji:"➗",build:mathWorksheet},
+  {id:"behavior",     name:"لوحة النجوم", cat:"مدرسي",emoji:"⭐",build:behaviorStars},
+  {id:"grades",       name:"كشف درجات",   cat:"مدرسي",emoji:"📊",build:gradesReport},
   {id:"business",     name:"أعمال",        cat:"عام",  emoji:"💼",build:businessCover},
   {id:"creative",     name:"إبداعي",       cat:"عام",  emoji:"🎨",build:creativeCover},
   {id:"minimal",      name:"داكن أنيق",   cat:"عام",  emoji:"🌙",build:minimalDark},
   {id:"gradient",     name:"تدرج ملوّن",  cat:"عام",  emoji:"🌈",build:gradientCover},
+  {id:"islamic",      name:"غلاف إسلامي", cat:"عام",  emoji:"🕌",build:islamicCover},
+  {id:"price-list",   name:"قائمة أسعار", cat:"أعمال",emoji:"🏷️",build:priceList},
+  {id:"flyer",        name:"إعلان عرض",   cat:"أعمال",emoji:"📢",build:flyerCover},
+  {id:"menu",         name:"قائمة طعام",  cat:"أعمال",emoji:"🍽️",build:restaurantMenu},
+  {id:"cv",           name:"سيرة ذاتية",  cat:"أعمال",emoji:"📄",build:cvCover},
+  {id:"wedding",      name:"دعوة زفاف",   cat:"مناسبات",emoji:"💍",build:weddingInvite},
+  {id:"thankyou",     name:"بطاقة شكر",   cat:"مناسبات",emoji:"💚",build:thankYouCard},
+  {id:"poster",       name:"بوستر فعالية",cat:"مناسبات",emoji:"🎤",build:posterEvent},
+  {id:"graduation",   name:"تهنئة تخرج",  cat:"مناسبات",emoji:"🎓",build:graduationCard},
+  {id:"eid",          name:"تهنئة عيد",   cat:"مناسبات",emoji:"🌙",build:eidGreeting},
+  {id:"birthday",     name:"عيد ميلاد",   cat:"مناسبات",emoji:"🎂",build:birthdayCard},
 ];
 
 const STICKERS = [
@@ -378,7 +646,21 @@ const GOOGLE_FONTS_HREF =
    "Readex+Pro:wght@400;700","Rakkas","Mada:wght@400;700","Baloo+Bhaijaan+2:wght@400;700"]
     .map(f => `family=${f}`).join("&") + "&display=swap";
 
-const CATS  = ["الكل","مدرسي","عام"];
+/** Wait until a web font is actually ready so canvas text renders with it
+ *  on the very first add (otherwise fabric paints with a fallback font). */
+async function loadFont(family: string) {
+  try {
+    const fonts = (document as any).fonts;
+    if (!fonts?.load) return;
+    await Promise.all([
+      fonts.load(`400 16px "${family}"`),
+      fonts.load(`700 16px "${family}"`),
+    ]);
+    await fonts.ready;
+  } catch { /* font load best-effort */ }
+}
+
+const CATS  = ["الكل","مدرسي","عام","أعمال","مناسبات"];
 const COLORS = ["#F59E0B","#EF4444","#3B82F6","#10B981","#8B5CF6","#EC4899","#FFFFFF","#000000","#FDD835","#1565C0"];
 const BG_PRESETS = ["#060A14","#0A1628","#1a237e","#4A148C","#1B5E20","#0D47A1","#0F1923","#FAFAFA","#0A0A0A","#150A2E"];
 
@@ -439,7 +721,22 @@ export default function DesignerPage() {
       // seed the initial (empty) state so the first undo has a target
       setTimeout(()=>{ historyRef.current.stack=[]; historyRef.current.index=-1; snapshot(); },200);
       // reflect the selected object's opacity in the slider + enable controls
-      const onSelect=()=>{ const o=canvas.getActiveObject(); setHasSel(!!o); if(o) setOpacity(Math.round((o.opacity??1)*100)); };
+      const onSelect=()=>{
+        const o=canvas.getActiveObject(); setHasSel(!!o);
+        if(!o)return;
+        setOpacity(Math.round((o.opacity??1)*100));
+        // When a text object is selected, mirror its style into the side panel
+        // and open the text tab so edits (size/color/font) apply to it directly.
+        if(o.type==="i-text"||o.type==="text"||o.type==="textbox"){
+          if(typeof o.fontSize==="number") setFSize(Math.round(o.fontSize));
+          if(typeof o.fill==="string") setColor(o.fill);
+          const fam=String(o.fontFamily||"").split(",")[0].trim();
+          if(fam && FONTS.includes(fam)) setFontFam(fam);
+          setBold(o.fontWeight==="bold"||o.fontWeight===700);
+          setItalic(o.fontStyle==="italic");
+          setTab("text");
+        }
+      };
       canvas.on("selection:created",onSelect);
       canvas.on("selection:updated",onSelect);
       canvas.on("selection:cleared",()=>setHasSel(false));
@@ -583,6 +880,25 @@ export default function DesignerPage() {
       selectable:true, editable:true, hasControls:true,
     });
     canvas.add(t); canvas.setActiveObject(t); canvas.renderAll();
+    // The Google font may not be ready on the first add — once it loads,
+    // re-apply it and repaint so the chosen font shows immediately.
+    loadFont(fontFam).then(()=>{
+      if(canvas.contains(t)){ t.set({fontFamily:`${fontFam},sans-serif`}); t.initDimensions?.(); canvas.requestRenderAll(); }
+    });
+  };
+
+  /** True if the active object is editable text (i-text / textbox). */
+  const activeIsText=()=>{
+    const o=fabricRef.current?.canvas.getActiveObject();
+    return !!o && (o.type==="i-text"||o.type==="text"||o.type==="textbox");
+  };
+  /** Live-apply a property change to the currently selected text object. */
+  const updateSelText=(patch:Record<string,any>)=>{
+    const r=fabricRef.current; if(!r)return;
+    const o=r.canvas.getActiveObject();
+    if(!o||!(o.type==="i-text"||o.type==="text"||o.type==="textbox"))return;
+    o.set(patch); o.initDimensions?.(); o.setCoords?.();
+    r.canvas.requestRenderAll(); snapshot();
   };
 
   const addSticker=(emoji:string)=>{
@@ -781,33 +1097,33 @@ export default function DesignerPage() {
                   className="input-glass w-full text-sm resize-none" placeholder="محتوى النص..."/>
                 <div>
                   <label className="text-xs text-slate-500 block mb-1">الخط</label>
-                  <select value={fontFam} onChange={e=>setFontFam(e.target.value)}
+                  <select value={fontFam} onChange={e=>{ const v=e.target.value; setFontFam(v); loadFont(v).then(()=>updateSelText({fontFamily:`${v},sans-serif`})); }}
                     className="input-glass w-full text-sm">
                     {FONTS.map(f=><option key={f} value={f}>{f}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs text-slate-500 block mb-1">الحجم: {fSize}px</label>
-                  <input type="range" min={8} max={96} value={fSize} onChange={e=>setFSize(+e.target.value)} className="w-full"/>
+                  <input type="range" min={8} max={96} value={fSize} onChange={e=>{ const v=+e.target.value; setFSize(v); updateSelText({fontSize:v}); }} className="w-full"/>
                 </div>
                 <div>
                   <label className="text-xs text-slate-500 block mb-1">اللون</label>
                   <div className="grid grid-cols-5 gap-1.5 mb-2">
                     {COLORS.map(c=>(
-                      <button key={c} onClick={()=>setColor(c)}
+                      <button key={c} onClick={()=>{ setColor(c); updateSelText({fill:c}); }}
                         className="w-8 h-8 rounded-lg transition-all hover:scale-110"
                         style={{background:c,outline:color===c?"2px solid #F59E0B":"2px solid rgba(255,255,255,0.1)",outlineOffset:"2px"}}/>
                     ))}
                   </div>
-                  <input type="color" value={color} onChange={e=>setColor(e.target.value)} className="w-full h-8 rounded-lg cursor-pointer border-0 bg-transparent"/>
+                  <input type="color" value={color} onChange={e=>{ setColor(e.target.value); updateSelText({fill:e.target.value}); }} className="w-full h-8 rounded-lg cursor-pointer border-0 bg-transparent"/>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={()=>setBold(b=>!b)}
+                  <button onClick={()=>{ const v=!bold; setBold(v); updateSelText({fontWeight:v?"bold":"normal"}); }}
                     className={cn("flex-1 py-2 rounded-xl text-sm font-700 transition-all flex items-center justify-center gap-1",
                       bold ? "bg-gold-500/20 text-gold-400 border border-gold-500/30" : "bg-white/5 text-slate-500 hover:text-white")}>
                     <Bold className="w-3.5 h-3.5"/>عريض
                   </button>
-                  <button onClick={()=>setItalic(i=>!i)}
+                  <button onClick={()=>{ const v=!italic; setItalic(v); updateSelText({fontStyle:v?"italic":"normal"}); }}
                     className={cn("flex-1 py-2 rounded-xl text-sm font-600 italic transition-all flex items-center justify-center gap-1",
                       italic ? "bg-electric-500/20 text-electric-400 border border-electric-500/30" : "bg-white/5 text-slate-500 hover:text-white")}>
                     <Italic className="w-3.5 h-3.5"/>مائل

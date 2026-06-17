@@ -42,6 +42,34 @@ function write(key: string, value: unknown) {
   notify();
 }
 
+function trySet(key: string, value: string): boolean {
+  if (!isBrowser()) return false;
+  try { localStorage.setItem(key, value); return true; }
+  catch { return false; }
+}
+
+/**
+ * Persist the file list in a quota-resilient way. localStorage is only a few
+ * MB, and base64 dataUrls fill it fast — a naive setItem throws QuotaExceeded
+ * and the upload silently disappears. Here we degrade gracefully: if the full
+ * payload doesn't fit, we drop dataUrls (oldest first) so the files still
+ * appear in "ملفاتي" as metadata-only entries instead of vanishing.
+ */
+function writeFiles(files: StoredFile[]) {
+  if (!isBrowser()) return;
+  if (trySet(FILES_KEY, JSON.stringify(files))) { notify(); return; }
+  const trimmed: StoredFile[] = files.map((f) => ({ ...f }));
+  for (let i = trimmed.length - 1; i >= 0; i--) {
+    if (trimmed[i].dataUrl) {
+      delete trimmed[i].dataUrl;
+      if (trySet(FILES_KEY, JSON.stringify(trimmed))) { notify(); return; }
+    }
+  }
+  // Last resort: keep only the newest 60 entries' metadata.
+  trySet(FILES_KEY, JSON.stringify(trimmed.slice(0, 60)));
+  notify();
+}
+
 function notify() {
   if (!isBrowser()) return;
   window.dispatchEvent(new Event(EVENT));
@@ -103,7 +131,7 @@ export function addFile(input: {
   source?: string;
 }): StoredFile {
   const dataUrl =
-    input.dataUrl && input.dataUrl.length < 3_000_000 ? input.dataUrl : undefined;
+    input.dataUrl && input.dataUrl.length < 4_000_000 ? input.dataUrl : undefined;
 
   const file: StoredFile = {
     id: Math.random().toString(36).slice(2) + Date.now().toString(36),
@@ -116,7 +144,7 @@ export function addFile(input: {
   };
 
   const files = getFiles();
-  write(FILES_KEY, [file, ...files]);
+  writeFiles([file, ...files]);
   bumpUsage({ files: 1 });
   return file;
 }
@@ -126,11 +154,11 @@ export function addFiles(inputs: Parameters<typeof addFile>[0][]): StoredFile[] 
 }
 
 export function deleteFile(id: string) {
-  write(FILES_KEY, getFiles().filter((f) => f.id !== id));
+  writeFiles(getFiles().filter((f) => f.id !== id));
 }
 
 export function clearFiles() {
-  write(FILES_KEY, []);
+  writeFiles([]);
 }
 
 /* ── usage ───────────────────────────────────────────────────────────────── */

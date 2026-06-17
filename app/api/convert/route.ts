@@ -76,6 +76,28 @@ export async function POST(req: NextRequest) {
       } catch {
         return NextResponse.json({ error: "لم يُنشأ الملف النصي" }, { status: 500 });
       }
+    } else if (srcExt === "pdf" && fmt.ext === "pptx") {
+      // ── PDF → PPTX: LibreOffice's Draw→Impress export comes out empty.
+      // Rasterise each page to PNG (poppler) and build a real deck instead. ──
+      const prefix = join(tempDir, "page");
+      try {
+        await execAsync(`pdftoppm -png -r 150 "${inputPath}" "${prefix}"`, { timeout: 120_000 });
+      } catch (e: any) {
+        return NextResponse.json({ error: `فشل تحويل صفحات PDF: ${e.message.slice(0, 160)}` }, { status: 500 });
+      }
+      const pngs = (await readdir(tempDir))
+        .filter(f => f.startsWith("page") && f.endsWith(".png"))
+        .sort((a, b) => {
+          const na = parseInt(a.match(/(\d+)\.png$/)?.[1] || "0", 10);
+          const nb = parseInt(b.match(/(\d+)\.png$/)?.[1] || "0", 10);
+          return na - nb;
+        });
+      if (pngs.length === 0) {
+        return NextResponse.json({ error: "تعذّر استخراج صفحات من ملف PDF" }, { status: 500 });
+      }
+      const imgs = await Promise.all(pngs.map(f => readFile(join(tempDir, f))));
+      const { imagesToPptx } = await import("@/lib/pptx");
+      outputBuf = await imagesToPptx(imgs);
     } else {
       const lo = await findLO();
 

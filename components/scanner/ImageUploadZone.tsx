@@ -28,7 +28,10 @@ async function pdfToImages(file: File): Promise<{ dataUrl: string; name: string 
   const MAX_PAGES = 30;
   for (let p = 1; p <= Math.min(doc.numPages, MAX_PAGES); p++) {
     const page = await doc.getPage(p);
-    const vp = page.getViewport({ scale: 1.8 });
+    // Render at high resolution so the scanned output stays crisp (was 1.8).
+    const base = page.getViewport({ scale: 1 });
+    const scale = Math.min(3, Math.max(2.2, 2200 / base.width));
+    const vp = page.getViewport({ scale });
     const canvas = document.createElement("canvas");
     canvas.width = vp.width;
     canvas.height = vp.height;
@@ -36,7 +39,7 @@ async function pdfToImages(file: File): Promise<{ dataUrl: string; name: string 
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     await (page.render as any)({ canvasContext: ctx, viewport: vp }).promise;
-    results.push({ dataUrl: canvas.toDataURL("image/jpeg", 0.92), name: `${file.name} — صفحة ${p}` });
+    results.push({ dataUrl: canvas.toDataURL("image/jpeg", 0.96), name: `${file.name} — صفحة ${p}` });
   }
   return results;
 }

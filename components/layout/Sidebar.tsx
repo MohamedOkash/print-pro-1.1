@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { clearSession } from "@/lib/auth";
+import { LogoIcon } from "@/components/Logo";
 import {
   ScanLine,
   RefreshCw,
@@ -12,7 +13,6 @@ import {
   Sparkles,
   LayoutDashboard,
   FolderOpen,
-  Printer,
   LogOut,
   ChevronLeft,
 } from "lucide-react";
@@ -49,11 +49,7 @@ export default function Sidebar({ open = false, onClose }: { open?: boolean; onC
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-6 border-b border-white/8">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)" }}
-        >
-          <Printer className="w-5 h-5 text-navy-900" />
-        </div>
+        <LogoIcon size={42} className="flex-shrink-0 drop-shadow-[0_0_12px_rgba(109,92,240,0.35)]" />
         <div>
           <h1 className="font-900 text-lg leading-none logo-gradient">Print Pro</h1>
           <p className="text-xs text-slate-500 mt-0.5">منصة الطباعة الذكية</p>

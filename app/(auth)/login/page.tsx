@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Printer, Eye, EyeOff, LogIn } from "lucide-react";
+import { Eye, EyeOff, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LogoIcon } from "@/components/Logo";
 import { validateLogin, setSession } from "@/lib/auth";
 
 export default function LoginPage() {
@@ -36,12 +37,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)", boxShadow: "0 8px 32px rgba(245,158,11,0.3)" }}
-          >
-            <Printer className="w-8 h-8 text-navy-900" />
-          </div>
+          <LogoIcon size={76} className="mb-4 drop-shadow-[0_8px_32px_rgba(109,92,240,0.45)]" />
           <h1 className="text-3xl font-900 logo-gradient">Print Pro</h1>
           <p className="text-slate-500 text-sm mt-1">منصة الطباعة الذكية</p>
         </div>

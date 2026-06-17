@@ -406,27 +406,57 @@ export default function EditorPage() {
       const scale=CANVAS_W/baseVp.width;
       const viewport=page.getViewport({scale});
       const content=await page.getTextContent();
-      const added:any[]=[];
+      const ARABIC=/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/;
+
+      // 1) Collect every text run with its on-canvas geometry.
+      type Run={str:string;fs:number;left:number;right:number;baseline:number;top:number};
+      const runs:Run[]=[];
       for(const item of content.items as any[]){
-        const str=(item.str||"").trim();
-        if(!str)continue;
+        const str=item.str||"";
+        if(!str.trim())continue;
         const tx=pdfjs.Util.transform(viewport.transform,item.transform);
-        const fontSize=Math.hypot(tx[2],tx[3]);
-        if(fontSize<4)continue;
+        const fs=Math.hypot(tx[2],tx[3]);
+        if(fs<4)continue;
         const left=tx[4];
-        const top=tx[5]-fontSize;
         const width=(item.width||0)*scale;
-        // white-out the original glyphs so edits/deletes truly replace them
+        runs.push({str,fs,left,right:left+width,baseline:tx[5],top:tx[5]-fs});
+      }
+
+      // 2) Group runs that share a baseline into single editable LINES. pdf.js
+      //    emits text in many tiny fragments; one box per fragment is unusable
+      //    (clutter + impossible selection). One box per line edits smoothly.
+      runs.sort((a,b)=> a.baseline-b.baseline || a.left-b.left);
+      const lines:Run[][]=[];
+      let cur:Run[]=[]; let curBase:number|null=null;
+      for(const r of runs){
+        if(curBase===null||Math.abs(r.baseline-curBase)<=r.fs*0.6){
+          cur.push(r); curBase=curBase===null?r.baseline:(curBase+r.baseline)/2;
+        }else{ lines.push(cur); cur=[r]; curBase=r.baseline; }
+      }
+      if(cur.length)lines.push(cur);
+
+      // 3) For each line: white-out the original glyphs and drop one editable
+      //    text box (RTL/LTR auto-detected) reflecting the document's own words.
+      const added:any[]=[];
+      for(const line of lines){
+        const minLeft=Math.min(...line.map(r=>r.left));
+        const maxRight=Math.max(...line.map(r=>r.right));
+        const fs=Math.max(...line.map(r=>r.fs));
+        const top=Math.min(...line.map(r=>r.top));
+        const isRtl=line.some(r=>ARABIC.test(r.str));
+        const ordered=[...line].sort((a,b)=> isRtl ? b.left-a.left : a.left-b.left);
+        const str=ordered.map(r=>r.str.trim()).filter(Boolean).join(" ").replace(/\s+/g," ").trim();
+        if(!str)continue;
         const cover=new fabric.Rect({
-          left:left-1, top:top-fontSize*0.12,
-          width:Math.max(width,fontSize*0.5)+2, height:fontSize*1.32,
+          left:minLeft-2, top:top-fs*0.15,
+          width:(maxRight-minLeft)+4, height:fs*1.42,
           fill:"#FFFFFF", selectable:false, evented:false,
         });
         const text=new fabric.IText(str,{
-          left:left+width, top,
-          originX:"right", originY:"top",
-          fontFamily:"Cairo,sans-serif", fontSize,
-          fill:"#111111", textAlign:"right", direction:"rtl",
+          left:isRtl?maxRight:minLeft, top,
+          originX:isRtl?"right":"left", originY:"top",
+          fontFamily:"Cairo,sans-serif", fontSize:fs,
+          fill:"#111111", textAlign:isRtl?"right":"left", direction:isRtl?"rtl":"ltr",
           selectable:true, editable:true, hasControls:true, padding:1,
         });
         added.push(cover,text);
