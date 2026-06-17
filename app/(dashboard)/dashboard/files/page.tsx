@@ -1,31 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import {
   FolderOpen, Upload, Search, Grid3X3, List,
-  Download, Trash2, FileEdit, RefreshCw, Share2,
-  Filter, File, Image, FileText, Presentation, Table
+  Download, Trash2, File, Image, FileText, Presentation, Table,
+  Trash, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatFileSize, formatDate } from "@/lib/utils";
-
-type FileItem = {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  created_at: string;
-  public_url?: string;
-};
-
-const DEMO_FILES: FileItem[] = [
-  { id: "1", name: "تقرير المبيعات 2024.pdf", type: "pdf", size: 2400000, created_at: new Date().toISOString() },
-  { id: "2", name: "صورة المستند.png", type: "image", size: 850000, created_at: new Date(Date.now() - 86400000).toISOString() },
-  { id: "3", name: "عرض الشركة.pptx", type: "pptx", size: 5200000, created_at: new Date(Date.now() - 172800000).toISOString() },
-  { id: "4", name: "جدول البيانات.xlsx", type: "xlsx", size: 180000, created_at: new Date(Date.now() - 259200000).toISOString() },
-  { id: "5", name: "عقد العمل.docx", type: "docx", size: 450000, created_at: new Date(Date.now() - 345600000).toISOString() },
-];
+import {
+  getFiles, addFile, deleteFile, clearFiles, subscribe,
+  kindFromFile, type StoredFile, type FileKind,
+} from "@/lib/store";
 
 const FILE_ICONS: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
   pdf: { icon: <File className="w-6 h-6" />, color: "#EF4444", bg: "rgba(239,68,68,0.1)" },
@@ -37,20 +24,32 @@ const FILE_ICONS: Record<string, { icon: React.ReactNode; color: string; bg: str
 };
 
 const FILE_TYPE_LABELS: Record<string, string> = {
-  pdf: "PDF",
-  image: "صورة",
-  docx: "Word",
-  pptx: "PowerPoint",
-  xlsx: "Excel",
-  other: "ملف",
+  pdf: "PDF", image: "صورة", docx: "Word", pptx: "PowerPoint", xlsx: "Excel", other: "ملف",
 };
 
+/** Read a File into a base64 data URL. */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function FilesPage() {
-  const [files, setFiles] = useState<FileItem[]>(DEMO_FILES);
+  // Subscribe to the shared store so uploads from any module appear live.
+  const files = useSyncExternalStore<StoredFile[]>(
+    subscribe,
+    getFiles,
+    () => [] as StoredFile[]
+  );
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState<StoredFile | null>(null);
 
   const filtered = files.filter((f) => {
     const matchesSearch = f.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -58,35 +57,37 @@ export default function FilesPage() {
     return matchesSearch && matchesType;
   });
 
-  const deleteFile = (id: string) =>
-    setFiles((prev) => prev.filter((f) => f.id !== id));
-
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = Array.from(e.target.files || []);
     if (!uploadedFiles.length) return;
-
     setUploading(true);
-    setTimeout(() => {
-      const newItems: FileItem[] = uploadedFiles.map((f) => ({
-        id: Math.random().toString(36).slice(2),
-        name: f.name,
-        type: f.type.startsWith("image/")
-          ? "image"
-          : f.name.endsWith(".pdf")
-          ? "pdf"
-          : f.name.endsWith(".docx")
-          ? "docx"
-          : f.name.endsWith(".pptx")
-          ? "pptx"
-          : f.name.endsWith(".xlsx")
-          ? "xlsx"
-          : "other",
-        size: f.size,
-        created_at: new Date().toISOString(),
-      }));
-      setFiles((prev) => [...newItems, ...prev]);
+    try {
+      for (const f of uploadedFiles) {
+        // keep a downloadable copy for small files; large files store metadata only
+        let dataUrl: string | undefined;
+        if (f.size < 4_000_000) {
+          try { dataUrl = await fileToDataUrl(f); } catch { /* ignore */ }
+        }
+        addFile({
+          name: f.name,
+          type: kindFromFile(f.name, f.type) as FileKind,
+          size: f.size,
+          dataUrl,
+          source: "upload",
+        });
+      }
+    } finally {
       setUploading(false);
-    }, 1000);
+      e.target.value = "";
+    }
+  };
+
+  const download = (file: StoredFile) => {
+    if (!file.dataUrl) return;
+    const a = document.createElement("a");
+    a.href = file.dataUrl;
+    a.download = file.name;
+    a.click();
   };
 
   const filterTypes = [
@@ -112,19 +113,30 @@ export default function FilesPage() {
             <p className="text-slate-400 text-sm mt-0.5">{files.length} ملف محفوظ</p>
           </div>
         </div>
-        <label>
-          <input type="file" multiple className="hidden" onChange={handleUpload}
-            accept=".pdf,.jpg,.jpeg,.png,.docx,.pptx,.xlsx" />
-          <Button variant="gold" loading={uploading} className="cursor-pointer">
-            <Upload className="w-4 h-4" />
-            {uploading ? "جاري الرفع..." : "رفع ملفات"}
-          </Button>
-        </label>
+        <div className="flex items-center gap-2">
+          {files.length > 0 && (
+            <Button
+              variant="ghost"
+              onClick={() => { if (confirm("حذف جميع الملفات؟")) clearFiles(); }}
+              className="text-slate-400 hover:text-red-400"
+            >
+              <Trash className="w-4 h-4" />
+              مسح الكل
+            </Button>
+          )}
+          <label>
+            <input type="file" multiple className="hidden" onChange={handleUpload}
+              accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.pptx,.xlsx,.csv" />
+            <Button variant="gold" loading={uploading} className="cursor-pointer">
+              <Upload className="w-4 h-4" />
+              {uploading ? "جاري الرفع..." : "رفع ملفات"}
+            </Button>
+          </label>
+        </div>
       </div>
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* Search */}
         <div className="relative flex-1 min-w-48">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <input
@@ -136,7 +148,6 @@ export default function FilesPage() {
           />
         </div>
 
-        {/* Type filter */}
         <div className="flex gap-1.5 flex-wrap">
           {filterTypes.map(({ id, label }) => (
             <button
@@ -154,7 +165,6 @@ export default function FilesPage() {
           ))}
         </div>
 
-        {/* View toggle */}
         <div className="flex gap-1 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
           <button
             onClick={() => setViewMode("grid")}
@@ -190,43 +200,44 @@ export default function FilesPage() {
         <div className="text-center py-20 text-slate-600">
           <FolderOpen className="w-14 h-14 mx-auto mb-4 opacity-20" />
           <p className="text-base font-600 mb-1">لا توجد ملفات</p>
-          <p className="text-sm">ارفع ملفاتك أو ابحث بكلمة مختلفة</p>
+          <p className="text-sm">ارفع ملفاتك أو أنشئها من الأدوات الأخرى</p>
         </div>
       ) : viewMode === "grid" ? (
-        /* Grid view */
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {filtered.map((file) => {
             const fileInfo = FILE_ICONS[file.type] || FILE_ICONS.other;
+            const isImg = file.type === "image" && file.dataUrl;
             return (
-              <div
-                key={file.id}
-                className="glass-card p-4 group transition-all hover:-translate-y-0.5"
-              >
-                {/* Icon */}
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
-                  style={{ background: fileInfo.bg, color: fileInfo.color }}
-                >
-                  {fileInfo.icon}
-                </div>
+              <div key={file.id} className="glass-card p-4 group transition-all hover:-translate-y-0.5">
+                {isImg ? (
+                  <button
+                    onClick={() => setPreview(file)}
+                    className="w-full h-24 rounded-xl overflow-hidden mb-3 block"
+                    style={{ background: "rgba(255,255,255,0.04)" }}
+                  >
+                    <img src={file.dataUrl} alt={file.name} className="w-full h-full object-cover" />
+                  </button>
+                ) : (
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
+                    style={{ background: fileInfo.bg, color: fileInfo.color }}
+                  >
+                    {fileInfo.icon}
+                  </div>
+                )}
 
-                {/* Name */}
-                <p className="text-sm font-600 text-slate-200 truncate mb-1" title={file.name}>
-                  {file.name}
-                </p>
+                <p className="text-sm font-600 text-slate-200 truncate mb-1" title={file.name}>{file.name}</p>
                 <p className="text-xs text-slate-600 mb-3">{formatFileSize(file.size)}</p>
 
-                {/* Badge */}
                 <Badge variant={file.type === "pdf" ? "red" : "gray"} className="mb-3">
                   {FILE_TYPE_LABELS[file.type] || file.type.toUpperCase()}
                 </Badge>
 
-                {/* Actions */}
                 <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {file.public_url && (
-                    <a href={file.public_url} download className="flex-1 flex items-center justify-center h-7 rounded-lg bg-electric-500/15 text-electric-400 hover:bg-electric-500/25 transition-all">
+                  {file.dataUrl && (
+                    <button onClick={() => download(file)} className="flex-1 flex items-center justify-center h-7 rounded-lg bg-electric-500/15 text-electric-400 hover:bg-electric-500/25 transition-all">
                       <Download className="w-3.5 h-3.5" />
-                    </a>
+                    </button>
                   )}
                   <button
                     onClick={() => deleteFile(file.id)}
@@ -240,42 +251,46 @@ export default function FilesPage() {
           })}
         </div>
       ) : (
-        /* List view */
         <div className="space-y-2">
           {filtered.map((file) => {
             const fileInfo = FILE_ICONS[file.type] || FILE_ICONS.other;
             return (
-              <div
-                key={file.id}
-                className="glass-card px-4 py-3 flex items-center gap-4 group hover:-translate-x-0.5 transition-all"
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: fileInfo.bg, color: fileInfo.color }}
-                >
+              <div key={file.id} className="glass-card px-4 py-3 flex items-center gap-4 group hover:-translate-x-0.5 transition-all">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: fileInfo.bg, color: fileInfo.color }}>
                   {fileInfo.icon}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-600 text-slate-200 truncate">{file.name}</p>
-                  <p className="text-xs text-slate-600">{formatDate(file.created_at)} • {formatFileSize(file.size)}</p>
+                  <p className="text-xs text-slate-600">{formatDate(file.createdAt)} • {formatFileSize(file.size)}</p>
                 </div>
                 <Badge variant="gray">{FILE_TYPE_LABELS[file.type] || "ملف"}</Badge>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {file.public_url && (
-                    <a href={file.public_url} download className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-electric-400 transition-all">
+                  {file.dataUrl && (
+                    <button onClick={() => download(file)} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-electric-400 transition-all">
                       <Download className="w-4 h-4" />
-                    </a>
+                    </button>
                   )}
-                  <button
-                    onClick={() => deleteFile(file.id)}
-                    className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-red-400 transition-all"
-                  >
+                  <button onClick={() => deleteFile(file.id)} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-red-400 transition-all">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Image preview lightbox */}
+      {preview?.dataUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          style={{ background: "rgba(2,6,16,0.85)", backdropFilter: "blur(8px)" }}
+          onClick={() => setPreview(null)}
+        >
+          <button className="absolute top-5 left-5 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20">
+            <X className="w-5 h-5" />
+          </button>
+          <img src={preview.dataUrl} alt={preview.name} className="max-w-full max-h-full rounded-xl object-contain" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </div>

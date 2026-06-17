@@ -242,6 +242,15 @@ body {
   color: rgba(255, 255, 255, 0.3);
 }
 
+/* Native <select> dropdown options inherit the page's light text colour, which
+   renders white-on-white on most browsers (the option list uses a light system
+   background). Force a dark background + light text so options stay readable. */
+.input-glass option,
+select option {
+  background: #0A1628;
+  color: #F1F5F9;
+}
+
 /* Tooltip */
 [data-tooltip]:hover::after {
   content: attr(data-tooltip);

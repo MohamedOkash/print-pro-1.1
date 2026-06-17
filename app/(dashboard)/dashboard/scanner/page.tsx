@@ -1,16 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ScanLine, Info } from "lucide-react";
 import ImageUploadZone, { type ScannedPage } from "@/components/scanner/ImageUploadZone";
+import { getScannerSession, setScannerSession } from "@/lib/session-store";
 import ImageEnhancer, { defaultSettings, type EnhanceSettings } from "@/components/scanner/ImageEnhancer";
 import ScannerExport from "@/components/scanner/ScannerExport";
 import ScannerPreview from "@/components/scanner/ScannerPreview";
+import ScannerOCR from "@/components/scanner/ScannerOCR";
+
+/** Convert a base64 data-URL to a File object (needed to satisfy ScannedPage type). */
+function dataUrlToFile(dataUrl: string, name: string): File {
+  const [header, b64] = dataUrl.split(",");
+  const mime = header.match(/:(.*?);/)?.[1] ?? "image/jpeg";
+  const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  return new File([bytes], name, { type: mime });
+}
 
 export default function ScannerPage() {
   const [pages,       setPages]       = useState<ScannedPage[]>([]);
   const [settings,    setSettings]    = useState<EnhanceSettings>(defaultSettings);
   const [selectedIdx, setSelectedIdx] = useState(0);
+
+  // ── session persistence ──────────────────────────────────────────────────
+  const snapRef = useRef({ pages, selectedIdx, settings });
+  useEffect(() => { snapRef.current = { pages, selectedIdx, settings }; });
+
+  useEffect(() => {
+    // Restore on mount
+    const s = getScannerSession();
+    if (s.pages.length > 0) {
+      const restored: ScannedPage[] = s.pages.map(p => ({
+        id: p.id,
+        name: p.name,
+        previewUrl: p.dataUrl,
+        renderedUrl: p.dataUrl,
+        file: dataUrlToFile(p.dataUrl, p.name),
+        isPdf: p.isPdf,
+      }));
+      setPages(restored);
+      setSelectedIdx(s.selectedIdx ?? 0);
+      if (s.settings && Object.keys(s.settings).length)
+        setSettings(s.settings as unknown as EnhanceSettings);
+    }
+    return () => {
+      const { pages: pg, selectedIdx: idx, settings: sett } = snapRef.current;
+      setScannerSession({
+        pages: pg.map(p => ({
+          id: p.id,
+          name: p.name,
+          dataUrl: p.renderedUrl ?? p.previewUrl,
+          isPdf: p.isPdf,
+        })),
+        selectedIdx: idx,
+        settings: sett as unknown as Record<string, unknown>,
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handlePagesChange = (next: ScannedPage[]) => {
     setPages(next);
@@ -72,6 +119,7 @@ export default function ScannerPage() {
               disabled={pages.length === 0}
             />
             <ScannerExport pages={pages} settings={settings} />
+            <ScannerOCR pages={pages} selectedIdx={selectedIdx} />
           </div>
         </div>
       )}

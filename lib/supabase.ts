@@ -2,8 +2,11 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+// Print Pro runs fully client-side (local auth + localStorage files); Supabase
+// is optional. Fall back to a syntactically-valid placeholder URL so the
+// client never throws at import time when env vars are unset.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "public-anon-key";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 

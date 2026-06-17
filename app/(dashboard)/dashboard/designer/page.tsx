@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Palette, Type, Square, Circle, Minus,
   Image as ImageIcon, Download, Trash2, RotateCcw,
-  ChevronUp, ChevronDown, Copy, Smile, Bold, Italic
+  ChevronUp, ChevronDown, Copy, Smile, Bold, Italic,
+  Undo, Redo, ChevronsUp, ChevronsDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { addFile, bumpUsage } from "@/lib/store";
+import { getDesignerSession, setDesignerSession } from "@/lib/session-store";
 
 /* ─────────── helpers ─────────── */
 function itext(f: any, text: string, opts: Record<string, any>) {
@@ -186,6 +189,82 @@ function gradientCover(f: any, cv: any) {
   cv.renderAll();
 }
 
+function timetable(f: any, cv: any) {
+  cv.clear(); cv.backgroundColor = "#102A43";
+  cv.add(
+    new f.Rect({left:0,top:0,width:420,height:90,fill:"#1565C0",selectable:false,evented:false}),
+    itext(f,"🗓️",{left:42,top:45,fontSize:32,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"جدول الحصص الأسبوعي",{left:225,top:36,fontSize:23,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"اسم الطالب / الفصل",{left:225,top:66,fontSize:13,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.7)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس"].forEach((d: string, i: number) => {
+    const y = 120 + i * 88;
+    cv.add(
+      new f.Rect({left:20,top:y,width:380,height:74,fill:"rgba(255,255,255,0.05)",rx:10,ry:10,selectable:false,evented:false}),
+      itext(f,d,{left:380,top:y+37,fontSize:16,fontFamily:"Cairo,sans-serif",fill:"#FDD835",fontWeight:"bold",textAlign:"right",originX:"right",originY:"center"}),
+      itext(f,"............................................",{left:40,top:y+37,fontSize:13,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.28)",originY:"center"}),
+    );
+  });
+  cv.renderAll();
+}
+
+function honorBoard(f: any, cv: any) {
+  cv.clear(); cv.backgroundColor = "#14532D";
+  cv.add(
+    new f.Rect({left:12,top:12,width:396,height:570,fill:"transparent",stroke:"#FFD700",strokeWidth:3,selectable:false,evented:false}),
+    itext(f,"🏆",{left:210,top:68,fontSize:54,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"لوحة الشرف",{left:210,top:150,fontSize:36,fontFamily:"Cairo,sans-serif",fill:"#FFD700",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"الطلاب المتفوقون لهذا الشهر",{left:210,top:198,fontSize:15,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.6)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  ["⭐","🥇","🥈","🥉","🌟"].forEach((medal: string, i: number) => {
+    const y = 250 + i * 62;
+    cv.add(
+      new f.Rect({left:50,top:y,width:320,height:48,fill:"rgba(255,255,255,0.06)",rx:24,ry:24,selectable:false,evented:false}),
+      itext(f,medal,{left:80,top:y+24,fontSize:20,originX:"center",originY:"center",selectable:false,evented:false}),
+      itext(f,"اسم الطالب",{left:345,top:y+24,fontSize:16,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",fontWeight:"bold",textAlign:"right",originX:"right",originY:"center"}),
+    );
+  });
+  cv.renderAll();
+}
+
+function notebookCover(f: any, cv: any) {
+  cv.clear(); cv.backgroundColor = "#0D47A1";
+  cv.add(
+    new f.Rect({left:0,top:0,width:420,height:594,fill:"transparent",stroke:"rgba(255,255,255,0.12)",strokeWidth:16,selectable:false,evented:false}),
+    itext(f,"📓",{left:210,top:95,fontSize:58,originX:"center",originY:"center",selectable:false,evented:false}),
+    new f.Rect({left:50,top:175,width:320,height:305,fill:"#FFFFFF",rx:14,ry:14,selectable:false,evented:false}),
+    itext(f,"كراسة المادة",{left:210,top:213,fontSize:24,fontFamily:"Cairo,sans-serif",fill:"#0D47A1",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    new f.Rect({left:90,top:246,width:240,height:2,fill:"#0D47A1",selectable:false,evented:false}),
+    itext(f,"الاسم:",{left:330,top:288,fontSize:15,fontFamily:"Cairo,sans-serif",fill:"#37474F",fontWeight:"bold",textAlign:"right",originX:"right",originY:"center"}),
+    new f.Rect({left:75,top:300,width:215,height:1.5,fill:"#90A4AE",selectable:false,evented:false}),
+    itext(f,"الصف:",{left:330,top:338,fontSize:15,fontFamily:"Cairo,sans-serif",fill:"#37474F",fontWeight:"bold",textAlign:"right",originX:"right",originY:"center"}),
+    new f.Rect({left:75,top:350,width:215,height:1.5,fill:"#90A4AE",selectable:false,evented:false}),
+    itext(f,"المدرسة:",{left:330,top:388,fontSize:15,fontFamily:"Cairo,sans-serif",fill:"#37474F",fontWeight:"bold",textAlign:"right",originX:"right",originY:"center"}),
+    new f.Rect({left:75,top:400,width:215,height:1.5,fill:"#90A4AE",selectable:false,evented:false}),
+    itext(f,"العام الدراسي:",{left:330,top:438,fontSize:15,fontFamily:"Cairo,sans-serif",fill:"#37474F",fontWeight:"bold",textAlign:"right",originX:"right",originY:"center"}),
+    new f.Rect({left:75,top:450,width:215,height:1.5,fill:"#90A4AE",selectable:false,evented:false}),
+    itext(f,"اسم المدرسة • ٢٠٢٤ / ٢٠٢٥",{left:210,top:530,fontSize:13,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.5)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
+function schoolEvent(f: any, cv: any) {
+  cv.clear(); cv.backgroundColor = "#311B92";
+  cv.add(
+    new f.Circle({left:-60,top:-60,radius:130,fill:"rgba(255,215,0,0.12)",selectable:false,evented:false}),
+    new f.Circle({left:330,top:470,radius:150,fill:"rgba(236,72,153,0.14)",selectable:false,evented:false}),
+    itext(f,"🎉",{left:210,top:95,fontSize:62,originX:"center",originY:"center",selectable:false,evented:false}),
+    itext(f,"دعوة لحضور",{left:210,top:185,fontSize:16,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.6)",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"عنوان الفعالية",{left:210,top:235,fontSize:34,fontFamily:"Cairo,sans-serif",fill:"#FFD700",fontWeight:"bold",textAlign:"center",originX:"center",originY:"center"}),
+    new f.Rect({left:110,top:280,width:200,height:2,fill:"#FFD700",selectable:false,evented:false}),
+    itext(f,"📅  التاريخ: ........................",{left:210,top:345,fontSize:15,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"🕒  الوقت: ........................",{left:210,top:390,fontSize:15,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"📍  المكان: ........................",{left:210,top:435,fontSize:15,fontFamily:"Cairo,sans-serif",fill:"#FFFFFF",textAlign:"center",originX:"center",originY:"center"}),
+    itext(f,"اسم المدرسة",{left:210,top:520,fontSize:14,fontFamily:"Cairo,sans-serif",fill:"rgba(255,255,255,0.4)",textAlign:"center",originX:"center",originY:"center"}),
+  );
+  cv.renderAll();
+}
+
 /* ─────────── frame builders ─────────── */
 const W = 420, H = 594;
 
@@ -268,6 +347,10 @@ const TEMPLATES = [
   {id:"research",     name:"غلاف بحث",    cat:"مدرسي",emoji:"🔬",build:researchCover},
   {id:"homework",     name:"ورقة واجب",   cat:"مدرسي",emoji:"✏️",build:homeworkSheet},
   {id:"student-card", name:"بطاقة طالب",  cat:"مدرسي",emoji:"🪪",build:studentCard},
+  {id:"timetable",    name:"جدول الحصص",  cat:"مدرسي",emoji:"🗓️",build:timetable},
+  {id:"honor-board",  name:"لوحة الشرف",  cat:"مدرسي",emoji:"🏆",build:honorBoard},
+  {id:"notebook",     name:"غلاف كراسة",  cat:"مدرسي",emoji:"📓",build:notebookCover},
+  {id:"school-event", name:"دعوة فعالية", cat:"مدرسي",emoji:"🎉",build:schoolEvent},
   {id:"business",     name:"أعمال",        cat:"عام",  emoji:"💼",build:businessCover},
   {id:"creative",     name:"إبداعي",       cat:"عام",  emoji:"🎨",build:creativeCover},
   {id:"minimal",      name:"داكن أنيق",   cat:"عام",  emoji:"🌙",build:minimalDark},
@@ -283,12 +366,16 @@ const STICKERS = [
 ];
 
 // Arabic display fonts loaded from Google Fonts (see font-loading effect below).
-const FONTS = ["Cairo","Tajawal","Almarai","Amiri","Aref Ruqaa","Reem Kufi","El Messiri","Lalezar","Changa","Markazi Text"];
+const FONTS = ["Cairo","Tajawal","Almarai","Amiri","Aref Ruqaa","Reem Kufi","El Messiri",
+  "Lalezar","Changa","Markazi Text","Noto Kufi Arabic","IBM Plex Sans Arabic",
+  "Readex Pro","Rakkas","Mada","Baloo Bhaijaan 2"];
 const GOOGLE_FONTS_HREF =
   "https://fonts.googleapis.com/css2?" +
   ["Cairo:wght@400;700;900","Tajawal:wght@400;700","Almarai:wght@400;700;800",
    "Amiri:wght@400;700","Aref+Ruqaa:wght@400;700","Reem+Kufi:wght@400;700",
-   "El+Messiri:wght@400;700","Lalezar","Changa:wght@400;700","Markazi+Text:wght@400;700"]
+   "El+Messiri:wght@400;700","Lalezar","Changa:wght@400;700","Markazi+Text:wght@400;700",
+   "Noto+Kufi+Arabic:wght@400;700","IBM+Plex+Sans+Arabic:wght@400;700",
+   "Readex+Pro:wght@400;700","Rakkas","Mada:wght@400;700","Baloo+Bhaijaan+2:wght@400;700"]
     .map(f => `family=${f}`).join("&") + "&display=swap";
 
 const CATS  = ["الكل","مدرسي","عام"];
@@ -301,6 +388,11 @@ export default function DesignerPage() {
   const canvasRef  = useRef<HTMLCanvasElement>(null);
   const fabricRef  = useRef<{canvas:any;fabric:any}|null>(null);
   const fileImgRef = useRef<HTMLInputElement>(null);
+  const historyRef = useRef<{stack:string[]; index:number; locked:boolean}>({stack:[],index:-1,locked:false});
+  const [canUndo,  setCanUndo]  = useState(false);
+  const [canRedo,  setCanRedo]  = useState(false);
+  const [opacity,  setOpacity]  = useState(100);
+  const [hasSel,   setHasSel]   = useState(false);
   const [loaded,   setLoaded]   = useState(false);
   const [tab,      setTab]      = useState<TabType>("templates");
   const [cat,      setCat]      = useState("الكل");
@@ -339,6 +431,18 @@ export default function DesignerPage() {
       });
       fabricRef.current={canvas,fabric};
       setLoaded(true);
+      // Record history on every meaningful change (skipped while locked during
+      // batch restores / template application).
+      canvas.on("object:added",snapshot);
+      canvas.on("object:modified",snapshot);
+      canvas.on("object:removed",snapshot);
+      // seed the initial (empty) state so the first undo has a target
+      setTimeout(()=>{ historyRef.current.stack=[]; historyRef.current.index=-1; snapshot(); },200);
+      // reflect the selected object's opacity in the slider + enable controls
+      const onSelect=()=>{ const o=canvas.getActiveObject(); setHasSel(!!o); if(o) setOpacity(Math.round((o.opacity??1)*100)); };
+      canvas.on("selection:created",onSelect);
+      canvas.on("selection:updated",onSelect);
+      canvas.on("selection:cleared",()=>setHasSel(false));
       // The canvas is now visible; recalc the interaction-layer geometry so
       // mouse selection/drag/double-click map to the correct coordinates.
       const recalc=()=>{ canvas.setDimensions({width:420,height:594}); canvas.calcOffset(); canvas.requestRenderAll(); };
@@ -359,13 +463,43 @@ export default function DesignerPage() {
       alive=false;
       const c=fabricRef.current?.canvas as any;
       if(c?.__cleanupOffset)c.__cleanupOffset();
+      // Save canvas state so it survives page navigation
+      if(fabricRef.current?.canvas){
+        try{ setDesignerSession({ canvasJson: fabricRef.current.canvas.toJSON() }); }catch{}
+      }
     };
   },[]);
+
+  /* ── Restore designer session after canvas is ready ─────────────────────
+     This runs once when the canvas initialises (loaded flips to true).
+     If the user had a previous design, we reload it from the session store. */
+  useEffect(()=>{
+    if(!loaded||!fabricRef.current)return;
+    const s=getDesignerSession();
+    if(s.canvasJson){
+      historyRef.current.locked=true;
+      fabricRef.current.canvas.loadFromJSON(s.canvasJson,()=>{
+        fabricRef.current!.canvas.renderAll();
+        historyRef.current.locked=false;
+      });
+    }
+    if(s.bgColor)setBgColor(s.bgColor);
+    if(s.tab)setTab(s.tab as any);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[loaded]);
+
+  // Keep session updated with bgColor & tab as they change
+  useEffect(()=>{ setDesignerSession({ bgColor, tab }); },[bgColor, tab]);
 
   /* keyboard: Delete/Backspace removes selected object (unless editing text) */
   useEffect(()=>{
     const onKey=(e:KeyboardEvent)=>{
       const r=fabricRef.current; if(!r)return;
+      // Undo / Redo (Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z or Ctrl+Y)
+      if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){
+        e.preventDefault(); if(e.shiftKey) redo(); else undo(); return;
+      }
+      if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="y"){ e.preventDefault(); redo(); return; }
       const obj=r.canvas.getActiveObject();
       if(!obj||obj.isEditing)return;
       if(e.key==="Delete"||e.key==="Backspace"){
@@ -376,8 +510,49 @@ export default function DesignerPage() {
     return ()=>window.removeEventListener("keydown",onKey);
   },[]);
 
+  /* ── undo / redo history ──
+     Snapshots the whole canvas (objects + background) to a JSON stack. Batch
+     operations (templates, frames) lock recording and snapshot once at the end
+     so a single undo reverts the entire action — Canva-style. */
+  const snapshot=()=>{
+    const r=fabricRef.current; if(!r)return;
+    const h=historyRef.current; if(h.locked)return;
+    const json=JSON.stringify(r.canvas.toJSON(["isFrame"]));
+    h.stack=h.stack.slice(0,h.index+1);
+    h.stack.push(json);
+    if(h.stack.length>60){ h.stack.shift(); } else { h.index++; }
+    h.index=h.stack.length-1;
+    setCanUndo(h.index>0); setCanRedo(false);
+  };
+  const restore=(json:string)=>{
+    const r=fabricRef.current; if(!r)return;
+    const h=historyRef.current; h.locked=true;
+    r.canvas.loadFromJSON(json,()=>{
+      r.canvas.renderAll();
+      setBgColor((r.canvas.backgroundColor as string)||"#0A1628");
+      h.locked=false;
+    });
+  };
+  const undo=()=>{
+    const h=historyRef.current; if(h.index<=0)return;
+    h.index--; restore(h.stack[h.index]);
+    setCanUndo(h.index>0); setCanRedo(true);
+  };
+  const redo=()=>{
+    const h=historyRef.current; if(h.index>=h.stack.length-1)return;
+    h.index++; restore(h.stack[h.index]);
+    setCanRedo(h.index<h.stack.length-1); setCanUndo(true);
+  };
+  /* run a multi-object operation as one undo step */
+  const batch=(fn:()=>void)=>{
+    const h=historyRef.current; h.locked=true;
+    fn();
+    h.locked=false; snapshot();
+  };
+
   const applyTemplate=(tpl:typeof TEMPLATES[0])=>{
     const r=fabricRef.current; if(!r)return;
+    batch(()=>{
     tpl.build(r.fabric,r.canvas);
     // Unlock every element of the template so the user can move, resize,
     // recolor or delete ANY object (not just the text) — Canva-style. Frames
@@ -388,6 +563,7 @@ export default function DesignerPage() {
       o.setCoords?.();
     });
     r.canvas.requestRenderAll();
+    });
     setSelTpl(tpl.id);
     setSelFrame("none");
     setBgColor(r.canvas.backgroundColor as string);
@@ -447,14 +623,31 @@ export default function DesignerPage() {
 
   const applyFrame=(fr:typeof FRAMES[0])=>{
     const r=fabricRef.current; if(!r)return;
-    fr.build(r.fabric,r.canvas,color);
+    batch(()=>fr.build(r.fabric,r.canvas,color));
     setSelFrame(fr.id);
   };
 
   const changeBg=(c:string)=>{
     const r=fabricRef.current; if(!r)return;
     r.canvas.backgroundColor=c; r.canvas.renderAll(); setBgColor(c);
+    snapshot();
   };
+
+  /* opacity + alignment + layering for the selected object */
+  const changeOpacity=(v:number)=>{
+    const r=fabricRef.current; if(!r)return;
+    setOpacity(v);
+    const o=r.canvas.getActiveObject(); if(!o)return;
+    o.set({opacity:v/100}); r.canvas.renderAll();
+  };
+  const alignCenter=(axis:"h"|"v")=>{
+    const r=fabricRef.current; if(!r)return;
+    const o=r.canvas.getActiveObject(); if(!o)return;
+    if(axis==="h") o.centerH(); else o.centerV();
+    o.setCoords(); r.canvas.renderAll(); snapshot();
+  };
+  const toFront=()=>{ const r=fabricRef.current; if(!r)return; const o=r.canvas.getActiveObject(); if(o){r.canvas.bringToFront(o);r.canvas.renderAll();snapshot();} };
+  const toBack =()=>{ const r=fabricRef.current; if(!r)return; const o=r.canvas.getActiveObject(); if(o){r.canvas.sendToBack(o);r.canvas.renderAll();snapshot();} };
 
   const handleImg=(e:React.ChangeEvent<HTMLInputElement>)=>{
     const file=e.target.files?.[0]; if(!file||!fabricRef.current)return;
@@ -466,20 +659,22 @@ export default function DesignerPage() {
     });
   };
 
-  const fwd=()=>{ const r=fabricRef.current; if(!r)return; const o=r.canvas.getActiveObject(); if(o){r.canvas.bringForward(o);r.canvas.renderAll();} };
-  const bwd=()=>{ const r=fabricRef.current; if(!r)return; const o=r.canvas.getActiveObject(); if(o){r.canvas.sendBackwards(o);r.canvas.renderAll();} };
+  const fwd=()=>{ const r=fabricRef.current; if(!r)return; const o=r.canvas.getActiveObject(); if(o){r.canvas.bringForward(o);r.canvas.renderAll();snapshot();} };
+  const bwd=()=>{ const r=fabricRef.current; if(!r)return; const o=r.canvas.getActiveObject(); if(o){r.canvas.sendBackwards(o);r.canvas.renderAll();snapshot();} };
   const del=()=>{ const r=fabricRef.current; if(!r)return; const o=r.canvas.getActiveObject(); if(o){r.canvas.remove(o);r.canvas.renderAll();} };
   const dup=()=>{
     const r=fabricRef.current; if(!r)return;
     const o=r.canvas.getActiveObject(); if(!o)return;
     o.clone((c:any)=>{ c.set({left:o.left+20,top:o.top+20,selectable:true}); r.canvas.add(c); r.canvas.setActiveObject(c); r.canvas.renderAll(); });
   };
-  const clearAll=()=>{ const r=fabricRef.current; if(!r)return; r.canvas.clear(); r.canvas.backgroundColor=bgColor; r.canvas.renderAll(); setSelTpl(null); setSelFrame("none"); };
+  const clearAll=()=>{ const r=fabricRef.current; if(!r)return; batch(()=>{ r.canvas.clear(); r.canvas.backgroundColor=bgColor; r.canvas.renderAll(); }); setSelTpl(null); setSelFrame("none"); };
 
   const exportPNG=()=>{
     const r=fabricRef.current; if(!r)return;
     const url=r.canvas.toDataURL({format:"png",multiplier:3});
-    const a=document.createElement("a"); a.href=url; a.download="غلاف.png"; a.click();
+    const name="غلاف.png";
+    const a=document.createElement("a"); a.href=url; a.download=name; a.click();
+    try{ addFile({name,type:"image",dataUrl:url,source:"designer"}); bumpUsage({operations:1}); }catch{}
   };
 
   const exportPDF=async()=>{
@@ -488,7 +683,13 @@ export default function DesignerPage() {
     const url=r.canvas.toDataURL({format:"png",multiplier:3});
     const pdf=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
     pdf.addImage(url,"PNG",0,0,210,297);
-    pdf.save("غلاف.pdf");
+    const name="غلاف.pdf";
+    pdf.save(name);
+    try{
+      const dataUrl=pdf.output("datauristring");
+      addFile({name,type:"pdf",dataUrl,source:"designer"});
+      bumpUsage({operations:1});
+    }catch{}
   };
 
   const visibleTpls = cat==="الكل" ? TEMPLATES : TEMPLATES.filter(t=>t.cat===cat);
@@ -517,6 +718,15 @@ export default function DesignerPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <button onClick={undo} disabled={!canUndo} title="تراجع (Ctrl+Z)"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/5 text-slate-300 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+            <Undo className="w-4 h-4"/>
+          </button>
+          <button onClick={redo} disabled={!canRedo} title="إعادة (Ctrl+Shift+Z)"
+            className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/5 text-slate-300 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+            <Redo className="w-4 h-4"/>
+          </button>
+          <div className="w-px h-9 bg-white/10 mx-0.5"/>
           <Button variant="glass" size="sm" onClick={exportPNG}><Download className="w-4 h-4"/>PNG</Button>
           <Button variant="gold" size="sm" onClick={exportPDF}><Download className="w-4 h-4"/>PDF</Button>
         </div>
@@ -722,7 +932,10 @@ export default function DesignerPage() {
 
           {/* Object controls */}
           <div className="glass-card p-3">
-            <p className="text-[10px] text-slate-600 mb-2 font-600">التحكم في العنصر المحدد</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] text-slate-600 font-600">التحكم في العنصر المحدد</p>
+              {!hasSel && <span className="text-[9px] text-gold-500/70 font-600">اختر عنصراً أولاً</span>}
+            </div>
             <div className="grid grid-cols-4 gap-1.5">
               {[
                 {fn:fwd, icon:<ChevronUp className="w-4 h-4"/>,   label:"أمام", cls:""},
@@ -730,13 +943,37 @@ export default function DesignerPage() {
                 {fn:dup, icon:<Copy className="w-4 h-4"/>,         label:"نسخ",  cls:""},
                 {fn:del, icon:<Trash2 className="w-4 h-4"/>,       label:"حذف",  cls:"text-red-400 bg-red-500/10 hover:bg-red-500/20"},
               ].map(({fn,icon,label,cls})=>(
-                <button key={label} onClick={fn}
-                  className={cn("flex flex-col items-center gap-0.5 p-2 rounded-xl text-[10px] font-600 transition-all",
+                <button key={label} onClick={fn} disabled={!hasSel}
+                  className={cn("flex flex-col items-center gap-0.5 p-2 rounded-xl text-[10px] font-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed",
                     cls || "bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200")}>
                   {icon}{label}
                 </button>
               ))}
             </div>
+            {/* Layering + alignment */}
+            <div className="grid grid-cols-4 gap-1.5 mt-1.5">
+              {[
+                {fn:toFront, icon:<ChevronsUp className="w-4 h-4"/>,   label:"للأمام"},
+                {fn:toBack,  icon:<ChevronsDown className="w-4 h-4"/>, label:"للخلف"},
+                {fn:()=>alignCenter("h"), icon:<span className="text-sm leading-none">↔</span>, label:"توسيط"},
+                {fn:()=>alignCenter("v"), icon:<span className="text-sm leading-none">↕</span>, label:"توسيط"},
+              ].map(({fn,icon,label},i)=>(
+                <button key={i} onClick={fn} disabled={!hasSel}
+                  className="flex flex-col items-center gap-0.5 p-2 rounded-xl text-[10px] font-600 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                  {icon}{label}
+                </button>
+              ))}
+            </div>
+
+            {/* Opacity */}
+            <div className="mt-2">
+              <div className="flex justify-between text-[10px] text-slate-600 mb-1">
+                <span>الشفافية</span><span className="text-gold-400 font-700">{opacity}%</span>
+              </div>
+              <input type="range" min={10} max={100} value={opacity} disabled={!hasSel}
+                onChange={e=>changeOpacity(+e.target.value)} className="w-full disabled:opacity-40"/>
+            </div>
+
             <button onClick={clearAll}
               className="w-full mt-2 py-1.5 rounded-xl text-xs text-slate-600 hover:text-red-400 hover:bg-red-500/5 transition-all flex items-center justify-center gap-1">
               <RotateCcw className="w-3 h-3"/>مسح الكل

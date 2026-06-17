@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { ScannedPage } from "./ImageUploadZone";
 import { buildFilter, type EnhanceSettings } from "./ImageEnhancer";
+import { addFile, bumpUsage } from "@/lib/store";
 
 interface Props {
   pages: ScannedPage[];
@@ -66,7 +67,16 @@ export default function ScannerExport({ pages, settings }: Props) {
         setProgress(Math.round(((i + 1) / pages.length) * 100));
       }
 
-      pdf.save(`${filename}.pdf`);
+      const safeName = `${filename || "مستند-ممسوح"}.pdf`;
+      pdf.save(safeName);
+
+      // Save a copy to "ملفاتي" and record usage
+      try {
+        const dataUrl = pdf.output("datauristring");
+        addFile({ name: safeName, type: "pdf", dataUrl, source: "scanner" });
+      } catch { /* ignore store errors */ }
+      bumpUsage({ pages: pages.length, operations: 1 });
+
       setDone(true);
     } catch (err) {
       console.error("PDF export error:", err);

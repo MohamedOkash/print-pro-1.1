@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazily create the client so an unset env (the default — Print Pro is
+// client-side) doesn't throw at import / build time.
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
+    process.env.SUPABASE_SERVICE_ROLE_KEY || "service-role-key"
+  );
+}
 
 export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get("userId");
   if (!userId) return NextResponse.json({ error: "userId مطلوب" }, { status: 400 });
 
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from("files")
     .select("*")
@@ -26,6 +31,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "fileId و storagePath مطلوبان" }, { status: 400 });
   }
 
+  const supabase = getSupabase();
   const { error: storageError } = await supabase.storage
     .from("printpro-files")
     .remove([storagePath]);

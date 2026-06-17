@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Printer, Eye, EyeOff, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { validateLogin, setSession } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,16 +19,16 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    try {
-      const { supabase } = await import("@/lib/supabase");
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "بيانات الدخول غير صحيحة");
-    } finally {
+    // Validate against the fixed allow-list (no external service, no guests)
+    await new Promise((r) => setTimeout(r, 350)); // tiny UX delay
+    const session = validateLogin(email, password);
+    if (!session) {
+      setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
       setLoading(false);
+      return;
     }
+    setSession(session);
+    router.push("/dashboard");
   };
 
   return (
@@ -96,25 +96,6 @@ export default function LoginPage() {
               {loading ? "جاري الدخول..." : "تسجيل الدخول"}
             </Button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-500">
-              ليس لديك حساب؟{" "}
-              <Link href="/register" className="text-gold-400 hover:text-gold-300 font-600">
-                إنشاء حساب جديد
-              </Link>
-            </p>
-          </div>
-        </div>
-
-        {/* Demo note */}
-        <div className="mt-4 text-center">
-          <p className="text-xs text-slate-600">
-            للاختبار: يمكنك المتابعة بدون تسجيل دخول{" "}
-            <Link href="/dashboard" className="text-electric-400 underline">
-              انتقل للوحة التحكم
-            </Link>
-          </p>
         </div>
       </div>
     </div>

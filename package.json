@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@cantoo/pdf-lib": "^2.7.1",
     "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-avatar": "^1.2.0",
     "@radix-ui/react-dialog": "^1.1.17",
@@ -42,7 +43,8 @@
     "react-dom": "^18",
     "react-pdf": "^7.7.3",
     "tailwind-merge": "^3.6.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "tesseract.js": "^5.1.1"
   },
   "devDependencies": {
     "@types/fabric": "^5.3.11",

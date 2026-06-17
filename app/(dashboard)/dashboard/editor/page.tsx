@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getEditorSession, setEditorSession, clearEditorSession } from "@/lib/session-store";
+import PdfTools from "@/components/editor/PdfTools";
 
 type Tool = "select" | "text" | "draw" | "highlight" | "rect" | "circle" | "line" | "erase" | "image";
 
@@ -40,7 +42,10 @@ export default function EditorPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgInputRef  = useRef<HTMLInputElement>(null);
   const pageDataRef  = useRef<Record<number,any>>({});
+  const pdfBufRef    = useRef<ArrayBuffer|null>(null);   // kept for session restore
+  const fileRef      = useRef<File|null>(null);          // always-current file for unmount closure
   const shapeRef     = useRef<{start:{x:number;y:number}|null; obj:any}>({start:null,obj:null});
+  const restorePageRef = useRef(1);  // page to jump to after PDF reload from session
   const isDownRef    = useRef(false);
   const pendingRender= useRef(false);
 
@@ -95,7 +100,9 @@ export default function EditorPage() {
   useEffect(()=>{
     if(loaded && pendingRender.current && pdfDocRef.current){
       pendingRender.current=false;
-      renderPage(1,false);
+      const targetPage=restorePageRef.current||1;
+      renderPage(targetPage,false);
+      if(targetPage>1) setCurrentPage(targetPage);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[loaded,numPages]);
@@ -221,19 +228,23 @@ export default function EditorPage() {
 
   /* ── load PDF file ── */
   const [loadError,setLoadError]=useState("");
-  const handleFile=async(f:File)=>{
+  const handleFile=async(f:File, skipPageReset=false)=>{
     if(f.type!=="application/pdf"&&!f.name.toLowerCase().endsWith(".pdf")){
       setLoadError("الرجاء اختيار ملف PDF صالح");
       return;
     }
     setLoadError("");
-    pageDataRef.current={};
+    if(!skipPageReset){
+      pageDataRef.current={};
+      extractedPagesRef.current=new Set();
+    }
     pendingRender.current=true;   // request a page-1 paint as soon as ready
     setFile(f);                   // mounts the canvas (first file)
     try{
       const {loadPdfjs}=await import("@/lib/pdf");
       const pdfjs=await loadPdfjs();
       const ab=await f.arrayBuffer();
+      pdfBufRef.current=ab;       // keep for session save on unmount
       const doc=await pdfjs.getDocument({data:new Uint8Array(ab)}).promise;
       pdfDocRef.current=doc;
       setCurrentPage(1);
@@ -241,7 +252,9 @@ export default function EditorPage() {
       if(fabricRef.current){
         // Fabric already initialised (e.g. opening a second file) → render now.
         pendingRender.current=false;
-        await renderPage(1,false);
+        const targetPage=restorePageRef.current||1;
+        await renderPage(targetPage,false);
+        setCurrentPage(targetPage);
       }
     }catch(err:any){
       console.error("PDF load error:",err);
@@ -250,6 +263,37 @@ export default function EditorPage() {
       setFile(null);
     }
   };
+
+  /* ── session: restore on mount, save on unmount ─────────────────────────
+     Refs carry latest values into the cleanup so the unmount save is fresh. */
+  const editorSnapRef=useRef({currentPage:1,numPages:0});
+  useEffect(()=>{ editorSnapRef.current={currentPage,numPages}; fileRef.current=file; });
+  useEffect(()=>{
+    const s=getEditorSession();
+    if(s.fileBuffer&&s.fileName){
+      pageDataRef.current={...s.pageDataJson as Record<number,any>};
+      restorePageRef.current=s.currentPage||1;
+      const restoredFile=new File([s.fileBuffer],s.fileName,{type:"application/pdf"});
+      handleFile(restoredFile,true);
+    }
+    return ()=>{
+      const snap=editorSnapRef.current;
+      if(pdfBufRef.current&&snap.numPages>0){
+        // Save the current-page annotations before leaving
+        if(fabricRef.current) pageDataRef.current[snap.currentPage]=fabricRef.current.canvas.toJSON();
+        setEditorSession({
+          fileBuffer:pdfBufRef.current,
+          fileName:fileRef.current?.name??"",
+          numPages:snap.numPages,
+          currentPage:snap.currentPage,
+          pageDataJson:pageDataRef.current,
+        });
+      }else{
+        clearEditorSession();
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
 
   const goToPage=async(p:number)=>{
     if(!pdfDocRef.current||p<1||p>numPages||rendering)return;
@@ -313,16 +357,89 @@ export default function EditorPage() {
 
     const pdfBytes=await newDoc.save();
     const blob=new Blob([pdfBytes.buffer as ArrayBuffer],{type:"application/pdf"});
+    const outName=`معدّل-${file.name}`;
     const a=document.createElement("a");
     a.href=URL.createObjectURL(blob);
-    a.download=`معدّل-${file.name}`;
+    a.download=outName;
     a.click();
+
+    // Save a copy to "ملفاتي" and record usage
+    try{
+      const {addFile,bumpUsage}=await import("@/lib/store");
+      if(blob.size<4_000_000){
+        const dataUrl:string=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result as string);r.onerror=rej;r.readAsDataURL(blob);});
+        addFile({name:outName,type:"pdf",size:blob.size,dataUrl,source:"editor"});
+      } else {
+        addFile({name:outName,type:"pdf",size:blob.size,source:"editor"});
+      }
+      bumpUsage({pages:numPages,operations:1});
+    }catch{}
   };
 
   const clearPage=()=>{
     const r=fabricRef.current; if(!r)return;
     r.canvas.getObjects().slice().forEach((o:any)=>r.canvas.remove(o));
     r.canvas.renderAll();
+  };
+
+  /* ── make the ORIGINAL page text editable (Canva-style) ──
+     Reads the real text of the current page with pdf.js (positions + sizes),
+     paints a white box over each original run, then drops an editable text box
+     on top. The user can now retype, add to, or delete the document's own words
+     — then export composites everything. Works best on white-background docs. */
+  const [extracting,setExtracting]=useState(false);
+  const extractedPagesRef=useRef<Set<number>>(new Set());
+  const extractText=async()=>{
+    const r=fabricRef.current;
+    if(!r||!pdfDocRef.current||rendering||extracting)return;
+    if(extractedPagesRef.current.has(currentPage)){
+      setActiveTool("select");
+      return;
+    }
+    const {canvas,fabric}=r;
+    setExtracting(true);
+    try{
+      const {loadPdfjs}=await import("@/lib/pdf");
+      const pdfjs=await loadPdfjs();
+      const page=await pdfDocRef.current.getPage(currentPage);
+      const baseVp=page.getViewport({scale:1});
+      const scale=CANVAS_W/baseVp.width;
+      const viewport=page.getViewport({scale});
+      const content=await page.getTextContent();
+      const added:any[]=[];
+      for(const item of content.items as any[]){
+        const str=(item.str||"").trim();
+        if(!str)continue;
+        const tx=pdfjs.Util.transform(viewport.transform,item.transform);
+        const fontSize=Math.hypot(tx[2],tx[3]);
+        if(fontSize<4)continue;
+        const left=tx[4];
+        const top=tx[5]-fontSize;
+        const width=(item.width||0)*scale;
+        // white-out the original glyphs so edits/deletes truly replace them
+        const cover=new fabric.Rect({
+          left:left-1, top:top-fontSize*0.12,
+          width:Math.max(width,fontSize*0.5)+2, height:fontSize*1.32,
+          fill:"#FFFFFF", selectable:false, evented:false,
+        });
+        const text=new fabric.IText(str,{
+          left:left+width, top,
+          originX:"right", originY:"top",
+          fontFamily:"Cairo,sans-serif", fontSize,
+          fill:"#111111", textAlign:"right", direction:"rtl",
+          selectable:true, editable:true, hasControls:true, padding:1,
+        });
+        added.push(cover,text);
+      }
+      added.forEach(o=>canvas.add(o));
+      canvas.renderAll();
+      extractedPagesRef.current.add(currentPage);
+      setActiveTool("select");
+    }catch(err){
+      console.error("text extraction failed:",err);
+    }finally{
+      setExtracting(false);
+    }
   };
 
   return (
@@ -356,21 +473,26 @@ export default function EditorPage() {
       </div>
 
       {!file ? (
-        <div className="upload-zone flex-1 flex items-center justify-center cursor-pointer"
-          style={{minHeight:"60vh"}} onClick={()=>fileInputRef.current?.click()}>
-          <div className="flex flex-col items-center gap-5">
-            <div className="w-24 h-24 rounded-3xl flex items-center justify-center animate-float"
-              style={{background:"rgba(139,92,246,0.1)",border:"2px dashed rgba(139,92,246,0.35)"}}>
-              <Upload className="w-10 h-10" style={{color:"#8B5CF6"}}/>
-            </div>
-            <div className="text-center">
-              <p className="text-xl font-700 text-slate-200 mb-1">ارفع ملف PDF للتحرير</p>
-              <p className="text-sm text-slate-500">أضف نصوصاً • ارسم • أضف أشكالاً وصوراً</p>
-              {loadError&&(
-                <p className="text-sm text-red-400 mt-3 font-600">{loadError}</p>
-              )}
+        <div className="space-y-5">
+          <div className="upload-zone flex items-center justify-center cursor-pointer"
+            style={{minHeight:"40vh"}} onClick={()=>fileInputRef.current?.click()}>
+            <div className="flex flex-col items-center gap-5">
+              <div className="w-24 h-24 rounded-3xl flex items-center justify-center animate-float"
+                style={{background:"rgba(139,92,246,0.1)",border:"2px dashed rgba(139,92,246,0.35)"}}>
+                <Upload className="w-10 h-10" style={{color:"#8B5CF6"}}/>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-700 text-slate-200 mb-1">ارفع ملف PDF للتحرير</p>
+                <p className="text-sm text-slate-500">أضف نصوصاً • ارسم • أضف أشكالاً وصوراً</p>
+                {loadError&&(
+                  <p className="text-sm text-red-400 mt-3 font-600">{loadError}</p>
+                )}
+              </div>
             </div>
           </div>
+
+          {/* PDF toolkit: merge / split / compress / protect */}
+          <PdfTools />
         </div>
       ) : (
         <div className="flex gap-3 flex-1">
@@ -463,6 +585,19 @@ export default function EditorPage() {
                   className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 disabled:opacity-30">
                   <ChevronLeft className="w-4 h-4"/>
                 </button>
+                <button onClick={extractText} disabled={extracting||rendering}
+                  title="تحرير نص الملف الأصلي (إضافة/تعديل/حذف الكلام)"
+                  className={cn(
+                    "flex items-center gap-1 px-2.5 h-8 rounded-lg text-[11px] font-600 transition-all disabled:opacity-40",
+                    extractedPagesRef.current.has(currentPage)
+                      ? "bg-emerald-500/15 text-emerald-400"
+                      : "bg-gold-500/15 text-gold-400 hover:text-gold-300"
+                  )}>
+                  {extracting
+                    ? <span className="w-3 h-3 border border-gold-400 border-t-transparent rounded-full animate-spin"/>
+                    : <Type className="w-3.5 h-3.5"/>}
+                  {extracting ? "استخراج..." : extractedPagesRef.current.has(currentPage) ? "نص قابل للتعديل" : "تحرير النص"}
+                </button>
                 <div className="w-px h-4 bg-white/10 mx-1"/>
                 <button onClick={clearPage} title="مسح تعديلات هذه الصفحة"
                   className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-500 hover:text-orange-400">
@@ -476,6 +611,7 @@ export default function EditorPage() {
                     fabricRef.current=null;
                     pdfDocRef.current=null;
                     pageDataRef.current={};
+                    extractedPagesRef.current=new Set();
                     pendingRender.current=false;
                     setLoaded(false);
                     setNumPages(0);

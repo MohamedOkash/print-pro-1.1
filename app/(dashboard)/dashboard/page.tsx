@@ -5,6 +5,7 @@ import {
   ScanLine, RefreshCw, FileEdit, Palette, Sparkles,
   ArrowLeft, Zap, Shield, Star,
 } from "lucide-react";
+import StatsPanel from "@/components/dashboard/StatsPanel";
 
 const modules = [
   {
@@ -118,6 +119,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Statistics ── */}
+      <StatsPanel />
 
       {/* ── Modules Grid ── */}
       <div>

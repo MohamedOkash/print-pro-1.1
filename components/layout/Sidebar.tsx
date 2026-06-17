@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { clearSession } from "@/lib/auth";
 import {
   ScanLine,
   RefreshCw,
@@ -10,6 +11,7 @@ import {
   Palette,
   Sparkles,
   LayoutDashboard,
+  FolderOpen,
   Printer,
   LogOut,
   ChevronLeft,
@@ -22,10 +24,17 @@ const navItems = [
   { href: "/dashboard/editor", label: "محرر PDF", icon: FileEdit },
   { href: "/dashboard/designer", label: "مصمم الأغلفة", icon: Palette },
   { href: "/dashboard/ai-studio", label: "الذكاء الاصطناعي", icon: Sparkles },
+  { href: "/dashboard/files", label: "ملفاتي", icon: FolderOpen },
 ];
 
 export default function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    clearSession();
+    router.replace("/login");
+  };
 
   return (
     <aside className={cn(
@@ -83,13 +92,13 @@ export default function Sidebar({ open = false, onClose }: { open?: boolean; onC
 
       {/* Footer */}
       <div className="px-3 py-4 border-t border-white/8">
-        <Link
-          href="/login"
-          className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-500 hover:text-red-400 hover:bg-red-500/5 transition-all"
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-500 hover:text-red-400 hover:bg-red-500/5 transition-all"
         >
           <LogOut className="w-4 h-4" />
           <span>تسجيل الخروج</span>
-        </Link>
+        </button>
       </div>
     </aside>
   );
